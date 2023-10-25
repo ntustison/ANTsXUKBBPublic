@@ -1,0 +1,260 @@
+\clearpage
+
+# Maximal Relevance Minimal Redundancy (MRMR) with Random Forest prediction
+
+```{r xgb-mrmr, message = FALSE, out.height="100%", results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "fsl_fast",
+                                       "fsl_first",
+                                       "fsl_other",
+                                       "freesurfer_aseg",
+                                       "freesurfer_dkt_cortical_thickness",
+                                       "freesurfer_dkt_cortical_volumes",
+                                       "freesurfer_hippocampus",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "freesurfer_hippocampus_amygdala",
+                                       "ants_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_volumes",
+                                       "ants_dkt_region_volumes",
+                                       "ants_deep_atropos",
+                                       "ants_brain_t1",
+                                       "ants_deep_flash",
+                                       "ants_deep_flash_hippocampus",
+                                       "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+ukbAll <- read.csv( paste0( dataDirectory, 'ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$fsl_fast$Data$Subject ),]
+
+targetMeasures <- data.frame( Age = ukbAll$f.21003.2.0
+                              ,
+                              FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                              NeuroticismScore = ukbAll$f.20127.0.0
+                              ,
+                              NumericMemory = ukbAll$f.20240.0.0
+                              # ,
+                              # AlzheimersFather = ukbAll$f.20107.Alzheimers,
+                              # AlzheimersMother = ukbAll$f.20110.Alzheimers,
+                              # PairsTestRound1.CorrectMatches = ukbAll$f.20131.0.0,
+                              # PairsTestRound2.CorrectMatches = ukbAll$f.20131.0.1
+                            )
+
+# Compile models and target measures
+
+modelNames <- c( "FSL", "FreeSurfer", "ANTsX" )
+
+modelData <- list()
+modelDescriptions <- list()
+
+modelData <- list.append( modelData, merge( idpData$fsl_fast$Data,
+                                       merge( idpData$fsl_first$Data,
+                                              idpData$fsl_other$Data, by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$fsl_fast$Description, ".fast" ),
+                                                        paste0( idpData$fsl_first$Description, ".first" ),
+                                                        paste0( idpData$fsl_other$Description, ".other" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$freesurfer_dkt_cortical_thickness$Data,
+                                       merge( idpData$freesurfer_dkt_cortical_volumes$Data,
+                                         merge( idpData$freesurfer_aseg$Data,
+                                                idpData$freesurfer_hippocampus_amygdala$Data, by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$freesurfer_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$freesurfer_dkt_cortical_volumes$Description, ".dkt.volume" ),
+                                                        paste0( idpData$freesurfer_aseg$Description, ".aseg" ),
+                                                        paste0( idpData$freesurfer_hippocampus_amygdala$Description, ".hipp.amyg" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$ants_dkt_cortical_thickness$Data,
+                                       merge( idpData$ants_dkt_cortical_volumes$Data,
+                                         merge( idpData$ants_dkt_region_volumes$Data,
+                                           merge( idpData$ants_deep_flash$Data,
+                                             merge( idpData$ants_deep_atropos$Data,
+                                               merge( idpData$sysu_wmh$Data,
+                                                      idpData$ants_brain_t1$Data, by = "Subject" ),
+                                             by = "Subject" ),
+                                           by = "Subject" ),
+                                         by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                                                        paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                                                        paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                                                        paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                                                        idpData$sysu_wmh$Description,
+                                                        idpData$ants_brain_t1$Description ) )
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  modelData[[i]]$Subject <- NULL
+  modelDescriptions[[i]] <- modelDescriptions[[i]][which( ! grepl( "Subject", modelDescriptions[[i]] ) )]
+  modelDescriptions[[i]] <- paste0( modelNames[i], ".", modelDescriptions[[i]] )
+  }
+
+allModelsData <- data.frame( cbind( modelData[[1]], modelData[[2]], modelData[[3]] ) )
+allModelsDescriptions <- c( modelDescriptions[[1]], modelDescriptions[[2]], modelDescriptions[[3]] )
+
+modelData <- list.append( modelData, allModelsData )
+modelDescriptions <- list.append( modelDescriptions, allModelsDescriptions )
+modelNames <- append( modelNames, "All" )
+
+#####################################################################################
+#
+# MRMR
+#
+
+numberOfFeatures <- 10
+numberOfPermutations <- 100
+# countThreshold <- round( numberOfPermutations / 4 )
+numberOfTopFeaturesToKeep <- 25
+
+set.seed( '1234' )
+numberOfTrainingData <- 10000
+trainingIndices <- sample.int( nrow( modelData[[1]] ), numberOfTrainingData )
+
+featurePermutationsCount <- list()
+featureImportance <- list()
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  featurePermutationsCount[[i]] <- list()
+  featureImportance[[i]] <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    featurePermutationsCount[[i]][[j]] <- rep( 0, length( modelDescriptions[[j]] ) + 1 )
+    featureImportance[[i]][[j]] <- rep( 0, length( modelDescriptions[[j]] ) + 1 )
+
+    # cat( "Processing", colnames( targetMeasures )[i], "\n" )
+    trainingData <- data.frame( cbind( as.double( targetMeasures[trainingIndices,i] ), modelData[[j]][trainingIndices,] ) )
+    trainingData <- trainingData[complete.cases( trainingData ),]
+    colnames( trainingData )[1] <- colnames( targetMeasures )[i]
+
+    trainingData <- apply( trainingData, MARGIN = 2, FUN = as.double )
+    mrmrTrainingData <- mRMR.data( data.frame( trainingData ) )
+
+    mrmr <- mRMR.ensemble( "mRMRe.Filter", data = mrmrTrainingData, target_indices = c( 1 ),
+                        solution_count = numberOfPermutations, feature_count = numberOfFeatures )
+
+    for( n in seq.int( numberOfPermutations ) )
+      {
+      selectedFeatures <- solutions( mrmr )[[1]][,n]
+      featurePermutationsCount[[i]][[j]][selectedFeatures] <- featurePermutationsCount[[i]][[j]][selectedFeatures] + 1
+      featureImportance[[i]][[j]][selectedFeatures] <- ( ( n - 1 ) * featureImportance[[i]][[j]][selectedFeatures] + mrmr@mi_matrix[selectedFeatures,1] ) / n
+      }
+    }
+  }
+
+mrmrData <- list()
+mrmrDescriptions <- list()
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  mrmrData[[i]] <- list()
+  mrmrDescriptions[[i]] <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    sortedFeatures <- sort( abs( featureImportance[[i]][[j]] ), decreasing = TRUE, index.return = TRUE )
+
+    mrmrData[[i]][[j]] <- modelData[[j]][, sortedFeatures$ix[1:numberOfTopFeaturesToKeep] - 1]
+    mrmrDescriptions[[i]][[j]] <- modelDescriptions[[j]][sortedFeatures$ix[1:numberOfTopFeaturesToKeep] - 1]
+
+    imp <- featureImportance[[i]][[j]][sortedFeatures$ix[1:numberOfTopFeaturesToKeep]]
+    des <- modelDescriptions[[j]][sortedFeatures$ix[1:numberOfTopFeaturesToKeep] - 1]
+    featuresDataFrame <- data.frame( Feature = des, Importance = imp )
+
+    # mrmrData[[i]][[j]] <- modelData[[j]][, which( featurePermutationsCount[[i]][[j]] > countThreshold ) - 1]
+    # mrmrDescriptions[[i]][[j]] <- modelDescriptions[[j]][which( featurePermutationsCount[[i]][[j]] > countThreshold ) - 1]
+
+    # imp <- featureImportance[[i]][[j]][which( featurePermutationsCount[[i]][[j]] > countThreshold )]
+    # des <- modelDescriptions[[j]][which( featurePermutationsCount[[i]][[j]] > countThreshold ) - 1]
+    # impOrder <- sort( abs( imp ), decreasing = TRUE, index.return = TRUE )
+    # imp <- imp[impOrder$ix]
+    # des <- des[impOrder$ix]
+
+    print( knitr::kable( featuresDataFrame,
+      caption = paste0( modelNames[j], " mRMR features (", colnames( targetMeasures )[i], ")" ) ) )
+
+    if( j == 4 )
+      {
+      cat( "\n__Number of features per model__\n\n" )
+      for( k in seq.int( length( modelNames ) - 1 ) )
+        {
+        modelCount <- length( which( grepl( paste0( modelNames[k], "." ), des ) ) )
+        modelCountTopThird <- length( which( which( grepl( paste0( modelNames[k], "." ), des ) ) < 0.333333 * length( des ) ) )
+        modelCountBottomThird <- length( which( which( grepl( paste0( modelNames[k], "." ), des ) ) >= 0.666667 * length( des ) ) )
+        modelCountMiddleThird <- modelCount - ( modelCountTopThird + modelCountBottomThird )
+        cat( "* ", paste0( modelNames[k], ": ", modelCount, " (", modelCountTopThird, ", ", modelCountMiddleThird, ", ", modelCountBottomThird, ")" ), "\n" )
+        }
+      }
+
+    }
+  }
+
+cat( "\n\n" )
+
+#####################################################################################
+#
+# Xgb prediction
+#
+
+numberOfPermutations <- 100
+numberOfTrainingData <- 5000
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  targetName <- colnames( targetMeasures )[i]
+  rmseFilename <- paste0( dataDirectory, "GradWarpExperiments/ukbiobank_mrmr_xgboost_", targetName, "_prediction.csv" )
+  modelFormula <- as.formula( paste0( targetName, " ~ . " ) )
+
+  cat( "\\clearpage\n\n\n" )
+  cat( "## ", targetName, "\n" )
+  cat( "\n\n" )
+
+  cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+  cat( "\n\n" )
+  cat( "**Number of training data:  **", numberOfTrainingData, "\n\n" )
+  cat( "\n\n" )
+
+  brainData <- list()
+  for( j in seq.int( length( mrmrData[[i]] ) ) )
+    {
+    brainData[[j]] <- cbind( targetMeasures[-trainingIndices, i], mrmrData[[i]][[j]][-trainingIndices,] )
+    colnames( brainData[[j]] )[1] <- targetName
+    }
+  for( j in seq.int( brainData ) )
+    {
+    brainData[[j]] <- brainData[[j]][complete.cases( brainData[[j]] ),]
+    }
+  brainDescriptions <- list()
+  for( j in seq.int( length( mrmrData[[i]] ) ) )
+    {
+    brainDescriptions[[j]] <- mrmrDescriptions[[i]][[j]]
+    }
+
+  antsxukbbXgboost( brainData, response = targetName, pipelineNames = modelNames,
+    filename = rmseFilename, numberOfPermutations = numberOfPermutations,
+    numberOfTrainingData = numberOfTrainingData,
+    plotTitle = targetName,
+    modelDescriptions = brainDescriptions,
+    numberOfRankedImportanceVariablesToPrint = 10,
+    plotFilename = paste0( "Figures/mrmr_xgb_", targetName ),
+    plotWidth = 3, plotHeight = 3 )
+  knitr::include_graphics( paste0( "Figures/mrmr_xgb_", targetName, ".pdf" ) )
+  }
+
+cat( "\n\n" )
+
+
+```
+
+\clearpage

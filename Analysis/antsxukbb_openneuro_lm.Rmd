@@ -1,0 +1,433 @@
+\clearpage
+
+# OpenNeuro Data
+
+```{r openneuro, message = FALSE, results = 'asis', echo = FALSE, fig.show = "hold", fig.align = "center", out.width='49%', eval = TRUE}
+
+dataDirectory <- '../Data/openneuro/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- './Figures/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+# targetMeasures <- c( "Age", "GeneticSex" )
+targetMeasures <- c( "Age" )
+
+# targetMeasuresType <- c( "regression",          # Age
+#                          "binary"               # GeneticSex
+#                        )
+targetMeasuresType <- c( "regression" )
+
+#######
+#
+# UKBB data 
+#
+########
+
+idpData <- loadIdpData( whichCohort = "ukbiobank",
+                        whichData = c( 
+                                    "ants_dkt_cortical_thickness",
+                                    "ants_dkt_cortical_volumes",
+                                    "ants_dkt_region_volumes",
+                                    "ants_deep_atropos",
+                                    "ants_brain_t1",
+                                    "ants_deep_flash",
+                                    "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+ukbbModelData <- merge( idpData$ants_dkt_cortical_thickness$Data,
+                  merge( idpData$ants_dkt_cortical_volumes$Data,
+                    merge( idpData$ants_dkt_region_volumes$Data,
+                      merge( idpData$ants_deep_flash$Data,
+                        merge( idpData$ants_deep_atropos$Data,
+                          merge( idpData$sysu_wmh$Data,
+                                 idpData$ants_brain_t1$Data, by = "Subject" ),
+                        by = "Subject" ),
+                      by = "Subject" ),
+                    by = "Subject" ),
+                  by = "Subject" ),
+                by = "Subject" )
+ukbbModelDescriptions <- c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                            paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                            paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                            paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                            paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                            idpData$sysu_wmh$Description,
+                            idpData$ants_brain_t1$Description )
+
+ukbAll <- read.csv( '../Data/ukbiobank/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' )
+colnames( ukbAll )[1] = "Subject"
+ukbbCommonSubjects <- intersect( ukbAll$Subject, ukbbModelData$Subject )
+ukbAll <- ukbAll[which( ukbAll$Subject %in% ukbbCommonSubjects ),]
+ukbbModelData <- ukbbModelData[which( ukbbModelData$Subject %in% ukbbCommonSubjects ),]
+
+ukbbDemographics <- data.frame( Subject = ukbAll$Subject,
+                                Age = as.numeric( ukbAll$f.21003.2.0 ),
+                                GeneticSex = ukbAll$f.22001.0.0
+                                # ,
+                                # Education = ukbAll$f.845.0.0
+                              )
+ukbbDemographics <- ukbbDemographics[complete.cases( ukbbDemographics ),]
+ukbCommonSubjects <- intersect( ukbbDemographics$Subject, ukbbModelData$Subject )
+ukbbModelData <- ukbbModelData[which( ukbbModelData$Subject %in% ukbCommonSubjects ),]
+
+ukbbModelData$Subject <- NULL
+ukbbDemographics$Subject <- NULL
+
+
+#######
+#
+# OpenNeuro data 
+#
+########
+
+idpData <- loadIdpData( whichCohort = "openneuro",
+                        whichData = c( 
+                                       "ants_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_volumes",
+                                       "ants_dkt_region_volumes",
+                                       "ants_deep_atropos",
+                                       "ants_brain_t1",
+                                       "ants_deep_flash",
+                                       "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+oneuroModelData <- merge( idpData$ants_dkt_cortical_thickness$Data,
+                    merge( idpData$ants_dkt_cortical_volumes$Data,
+                      merge( idpData$ants_dkt_region_volumes$Data,
+                        merge( idpData$ants_deep_flash$Data,
+                          merge( idpData$ants_deep_atropos$Data,
+                            merge( idpData$sysu_wmh$Data,
+                                   idpData$ants_brain_t1$Data, by = "Subject" ),
+                          by = "Subject" ),
+                        by = "Subject" ),
+                      by = "Subject" ),
+                    by = "Subject" ),
+                  by = "Subject" )
+oneuroModelDescriptions <- c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                              paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                              paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                              paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                              paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                              idpData$sysu_wmh$Description,
+                              idpData$ants_brain_t1$Description )
+
+oneuroAll <- read.delim( paste0( dataDirectory, "Demographics/participants.tsv" ) )
+colnames( oneuroAll )[1] = "Subject"
+oneuroAll <- oneuroAll[which( oneuroAll$Subject %in% idpData$ants_deep_atropos$Data$Subject ),]
+
+oneuroDemographics <- data.frame( Subject = oneuroAll$Subject,
+                                  Age = as.numeric( oneuroAll$age ),
+                                  GeneticSex = oneuroAll$sex
+                                  # ,
+                                  # Education = oneuroAll$education
+                                )
+oneuroDemographics$GeneticSex[which( oneuroDemographics$GeneticSex == 'F' )] <- 0
+oneuroDemographics$GeneticSex[which( oneuroDemographics$GeneticSex == 'M' )] <- 1
+oneuroDemographics <- oneuroDemographics[complete.cases( oneuroDemographics ),]
+
+# Prune to ages in ukbb
+
+ukbbAgeRange <- range( ukbbDemographics$Age )
+oneuroDemographics <- oneuroDemographics[which( oneuroDemographics$Age >= ukbbAgeRange[1] & 
+                                                oneuroDemographics$Age <= ukbbAgeRange[2] ),]
+oneuroModelData <- oneuroModelData[which( oneuroModelData$Subject %in% oneuroDemographics$Subject ),]
+
+oneuroModelData$Subject <- NULL 
+oneuroDemographics$Subject <- NULL
+
+#####################################################################################
+#
+# Remove highly correlated IDPs
+#
+
+y <- findLinearCombos( ukbbModelData )
+if( length( y$remove ) > 0 )
+  {
+  cat( "Removing ", y$remove, ": ", ukbbModelDescriptions[y$remove], "\n" )
+  ukbbModelData <- ukbbModelData[, -y$remove]
+  ukbbModelDescriptions <- ukbbModelDescriptions[-y$remove]
+  oneuroModelData <- oneuroModelData[, -y$remove]
+  oneuroModelDescriptions <- oneuroModelDescriptions[-y$remove]
+  }
+
+#####################################################################################
+#
+# Check matching populations
+#
+
+numberOfPermutations <- 1
+
+testingDataAverage <- data.frame()
+
+useUkbbFakeOneuroData <- TRUE
+
+trainingDataPercentage <- 0.9
+numberOfTrainingData <- floor( trainingDataPercentage * nrow( ukbbModelData ) )
+
+for( n in seq.int( numberOfPermutations ) )
+  {
+  trainingIndices <- sample.int( nrow( ukbbModelData ), numberOfTrainingData )
+  trainingData <- ukbbModelData[trainingIndices,]
+
+  testingIndices <- seq.int( nrow( ukbbModelData ) )[-trainingIndices]
+  testingData <- ukbbModelData[testingIndices,]
+
+  # ukbbMatchingData <- cbind( rep( 0, length( testingIndices ) ), ukbbDemographics[testingIndices,] )  
+  ukbbMatchingData <- cbind( rep( 0, length( testingIndices ) ), ukbbDemographics[testingIndices,], ukbbModelData[testingIndices,] )  
+  colnames( ukbbMatchingData )[1] <- "treatment"
+
+  if( useUkbbFakeOneuroData )
+    {
+    subTestingIndices <- sample( testingIndices, nrow( oneuroDemographics ) )
+    oneuroMatchingData <- cbind( rep( 1, length( subTestingIndices ) ), ukbbDemographics[subTestingIndices,], ukbbModelData[subTestingIndices,] )  
+    colnames( oneuroMatchingData )[1] <- "treatment"
+    } else {
+    # oneuroMatchingData <- cbind( rep( 1, nrow( oneuroDemographics ) ), oneuroDemographics )
+    oneuroMatchingData <- cbind( rep( 1, nrow( oneuroDemographics ) ), oneuroDemographics, oneuroModelData )
+    }
+  colnames( oneuroMatchingData )[1] <- "treatment"
+
+  matchingData <- rbind( ukbbMatchingData, oneuroMatchingData )
+  matchingData$GeneticSex <- as.factor( matchingData$GeneticSex )
+  
+  matchingOut <- matchit( treatment ~ Age + GeneticSex, method = "nearest", data = matchingData, distance = "glm", replace = FALSE )
+  matchedData <- get_matches( matchingOut )
+
+  matchedData$GeneticSex <- as.numeric( matchedData$GeneticSex )
+
+  ukbbMatchedData <- matchedData[which( matchedData$treatment == 0 ),]
+  oneuroMatchedData <- matchedData[which( matchedData$treatment == 1 ),]
+
+  ukbbDataMelt <- melt( ukbbMatchedData[, c( 5:ncol( matchedData ) )] )
+  oneuroDataMelt <- melt( oneuroMatchedData[, c( 5:ncol( matchedData ) )] )
+
+  checkDataFrame <- data.frame( 
+                      IDP = factor( ukbbDataMelt$variable, levels = unique( ukbbDataMelt$variable ) ),
+                      UKBB = ukbbDataMelt$value,
+                      OpenNeuro = oneuroDataMelt$value )
+    
+  for( i in seq.int( length( levels( checkDataFrame$IDP ) ) ) )
+  # for( i in seq.int( 10 ) )
+    {
+    singleMeasureCheckData <- checkDataFrame[which( checkDataFrame$IDP == levels( checkDataFrame$IDP )[i] ),]
+    checkPlot <- ggplot( data = singleMeasureCheckData, aes( x = UKBB, y = OpenNeuro ) ) +
+                geom_point() +
+                geom_smooth( method = "lm", se = FALSE) +
+                ggtitle( levels( checkDataFrame$IDP )[i] ) +
+                scale_x_continuous( name = "UKBB", limits = range( c( singleMeasureCheckData$UKBB, singleMeasureCheckData$OpenNeuro ) ) ) +
+                scale_y_continuous( name = "OpenNeuro", limits = range( c( singleMeasureCheckData$UKBB, singleMeasureCheckData$OpenNeuro ) ) ) +
+                theme( axis.text.x = element_text( face = "bold" ) )
+    ggplot2::ggsave( paste0( figuresDirectory, "check.", levels( checkDataFrame$IDP )[i], ".pdf" ), checkPlot,
+        width = 5, height = 5, units = "in" )
+    }
+  }
+
+
+
+
+
+#####################################################################################
+#
+# Linear model prediction
+#
+
+numberOfPermutations <- 10
+trainingDataPercentage <- 0.90
+
+useUkbbFakeOneuroData <- TRUE
+
+
+for( doMatching in c( TRUE, FALSE ) )
+  {
+  for( i in seq.int( length( targetMeasures ) ) )
+    {
+    targetName <- targetMeasures[i]
+    modelFormula <- as.formula( paste0( targetName, " ~ . " ) )
+
+    oneuroModelDataPerTarget <- cbind( oneuroDemographics[,targetName], oneuroModelData )
+    colnames( oneuroModelDataPerTarget )[1] <- targetName
+    oneuroModelDataPerTarget <- oneuroModelDataPerTarget[complete.cases( oneuroModelDataPerTarget ),]
+
+    cat( "\\clearpage\n\n\n" )
+    if( doMatching )
+      {
+      cat( "## ", targetName, "(preprocessed matching)\n" )
+      } else {
+      cat( "## ", targetName, "(no preprocessed matching)\n" )
+      }
+    cat( "\n\n" )
+
+    cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+    cat( "\n\n" )
+
+    numberOfTrainingData <- floor( trainingDataPercentage * nrow( ukbbModelData ) )
+
+    targetDataFrame <- data.frame()
+    measureUkbb <- c()
+    measureOneuro <- c()
+
+    for( n in seq.int( numberOfPermutations ) )
+      {
+      trainingIndices <- sample.int( nrow( ukbbModelData ), numberOfTrainingData )
+      testingIndices <- seq.int( nrow( ukbbModelData ) )[-trainingIndices]
+
+      trainingData <- ukbbModelData[trainingIndices,]
+      trainingResponse <- ukbbDemographics[trainingIndices,targetName]
+
+      testingData <- ukbbModelData[testingIndices,]
+      testingResponse <- ukbbDemographics[testingIndices,targetName]
+
+      if( doMatching )
+        {
+        # ukbbMatchingData <- cbind( rep( 0, length( testingIndices ) ), ukbbDemographics[testingIndices,] )  
+        ukbbMatchingData <- cbind( rep( 0, length( testingIndices ) ), ukbbDemographics[testingIndices,], ukbbModelData[testingIndices,] )  
+        colnames( ukbbMatchingData )[1] <- "treatment"
+
+        if( useUkbbFakeOneuroData )
+          {
+          subTestingIndices <- sample( testingIndices, nrow( oneuroDemographics ) )
+          oneuroMatchingData <- cbind( rep( 1, length( subTestingIndices ) ), ukbbDemographics[subTestingIndices,], ukbbModelData[subTestingIndices,] )  
+          } else {
+          # oneuroMatchingData <- cbind( rep( 1, nrow( oneuroDemographics ) ), oneuroDemographics )
+          oneuroMatchingData <- cbind( rep( 1, nrow( oneuroDemographics ) ), oneuroDemographics, oneuroModelData )
+          } 
+        colnames( oneuroMatchingData )[1] <- "treatment"
+
+        matchingData <- rbind( ukbbMatchingData, oneuroMatchingData )
+        matchingData$GeneticSex <- as.factor( matchingData$GeneticSex )
+        
+        matchingOut <- matchit( treatment ~ Age + GeneticSex, method = "nearest", data = matchingData, distance = "glm", replace = FALSE )
+        matchedData <- get_matches( matchingOut )
+      
+        ukbbMatchedData <- matchedData[which( matchedData$treatment == 0 ),]
+        oneuroMatchedData <- matchedData[which( matchedData$treatment == 1 ),]
+
+        ukbbTestingData <- ukbbMatchedData[,-c( 1:6 )] 
+        ukbbTestingResponse <- ukbbMatchedData[, targetName]
+
+        oneuroTestingData <- oneuroMatchedData[,-c( 1:6 )] 
+        oneuroTestingResponse <- oneuroMatchedData[, targetName]
+        } else {
+        randomIndices <- sample.int( nrow( testingData ), nrow( oneuroModelDataPerTarget ) )
+        ukbbTestingData <- testingData[randomIndices,]
+        ukbbTestingResponse <- testingResponse[randomIndices]
+
+        if( useUkbbFakeOneuroData )
+          {
+          subTestingIndices <- sample( testingIndices, nrow( oneuroDemographics ) )
+          oneuroTestingData <- ukbbModelData[subTestingIndices,]
+          oneuroTestingResponse <- ukbbDemographics[subTestingIndices,targetName]
+          } else {
+          oneuroTestingData <- oneuroModelDataPerTarget[, -1]
+          oneuroTestingResponse <- oneuroModelDataPerTarget[, 1]
+          } 
+        }
+      
+      if( targetMeasuresType[i] == "binary" )
+        {
+        ukbbTestingResponse <- as.factor( ukbbTestingResponse )
+        oneuroTestingResponse <- as.factor( oneuroTestingResponse )
+        } 
+ 
+
+      lmModel <- NULL
+      predictUkbb <- NULL
+      predictOneuro <- NULL
+      if( targetMeasuresType[i] == "regression" )
+        {
+        trainingModelData <- cbind( trainingResponse, trainingData )
+        colnames( trainingModelData )[1] <- targetName
+        lmModel <- lm( modelFormula, trainingModelData )
+        predictUkbb <- predict( lmModel, ukbbTestingData ) 
+        predictOneuro <- predict( lmModel, oneuroTestingData ) 
+        } else if( targetMeasuresType[i] == "binary" ) {
+        trainingResponse <- as.factor( trainingResponse )
+        trainingModelData <- cbind( trainingResponse, trainingData )
+        colnames( trainingModelData )[1] <- targetName
+        ukbbTestingResponse <- as.factor( ukbbTestingResponse )
+        lmModel <- glm( modelFormula, trainingModelData, family = binomial( link = 'logit' ) )
+        predictUkbb <- predict( lmModel, ukbbTestingData, type = "response" ) 
+        predictOneuro <- predict( lmModel, oneuroTestingData, type = "response" ) 
+        } else {
+        stop( "Unrecognized type." )
+        }
+
+      N <- length( ukbbTestingResponse )
+      singlePermutationTargetDataFrame <- data.frame( Actual = c( ukbbTestingResponse, oneuroTestingResponse ),
+                                                      Predicted = c( predictUkbb, predictOneuro ),
+                                                      DataSet = c( rep( "UKBB", N ), rep( "OpenNeuro", N ) )
+                                                    )
+      if( nrow( targetDataFrame ) == 0 )
+        {
+        targetDataFrame <- singlePermutationTargetDataFrame
+        } else {
+        targetDataFrame <- rbind( targetDataFrame, singlePermutationTargetDataFrame )
+        }
+
+      if( targetMeasuresType[i] == "regression" )
+        {
+        measureUkbb[n] <- sqrt( mean( ( predictUkbb - ukbbTestingResponse )^2, na.rm = TRUE ) )
+        measureOneuro[n] <- sqrt( mean( ( predictOneuro - oneuroTestingResponse )^2, na.rm = TRUE ) )
+        } else if( targetMeasuresType[i] == "binary" ) {
+        measureUkbb[n] <- pROC::auc( ukbbTestingResponse, predictUkbb )
+        measureOneuro[n] <- pROC::auc( oneuroTestingResponse, predictOneuro )
+        } else {
+        stop( "Unrecognized type." )
+        }
+      }
+
+    myPlotFilename <- ''
+    myPlotTitle <- targetName
+    if( doMatching )
+      {
+      myPlotFilename <- paste0( figuresDirectory, "Generalizability", targetName, "Matching.pdf" )
+      myPlotTitle <- paste0( targetName, " (Matching)" )
+      } else {
+      myPlotFilename <- paste0( figuresDirectory, "Generalizability", targetName, "NoMatching.pdf" )
+      myPlotTitle <- paste0( targetName, " (No matching)" )
+      }
+
+    myPlot <- ''  
+    if( targetMeasuresType[i] == "regression" )
+      {
+      myPlot <- ggplot( data = targetDataFrame, aes( x = Actual, y = Predicted, colour = DataSet ) ) +
+                  geom_point() +
+                  geom_smooth( method = "lm", se = FALSE ) +
+                  scale_color_manual( labels = c( paste0( "OpenNeuro\n(RMSE=", round( mean( measureOneuro ), 2 ), ")" ), 
+                                                  paste0( "UKBB\n(RMSE=", round( mean( measureUkbb ), 2 ), ")" ) ), 
+                                      values = scales::hue_pal()( 2 ) ) +
+                  ggtitle( myPlotTitle ) +
+                  scale_x_continuous( name = "Actual", limits = range( as.numeric( ukbbTestingResponse ) ) ) +
+                  scale_y_continuous( name = "Predicted", limits = range( as.numeric( ukbbTestingResponse ) ) ) 
+      } else {
+      rocTargetDataFrame <- data.frame( D = as.numeric( targetDataFrame$Actual ) - 1, M1 = targetDataFrame$Predicted, 
+                                        DataSet = targetDataFrame$DataSet, stringsAsFactors = FALSE )
+      myPlot <- ggplot( data = rocTargetDataFrame, aes( d = D, m = M1, colour = DataSet ) ) +
+                  geom_roc() +
+                  scale_color_manual( labels = c( paste0( "OpenNeuro\n(AUC=", round( mean( measureOneuro ), 2 ), ")" ), 
+                                                  paste0( "UKBB\n(AUC=", round( mean( measureUkbb ), 2 ), ")" ) ), 
+                                      values = scales::hue_pal()( 2 ) ) +
+                  ggtitle( myPlotTitle )
+      }
+    ggplot2::ggsave( myPlotFilename, myPlot, width = 1.15 * 5, height = 5, units = "in" )
+
+    cat( "![", targetName, "]", "(", myPlotFilename, ")", sep = "" )
+
+    cat( "\n\n" )
+    cat( "Measure UKBB ", mean( measureUkbb ), "\n\n" ) 
+    cat( "Measure OpenNeuro ", mean( measureOneuro ), "\n" ) 
+    }
+  }
+
+```
+\clearpage
+
+
+
+

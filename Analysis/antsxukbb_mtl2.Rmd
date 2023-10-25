@@ -1,0 +1,158 @@
+
+
+# Nested DeepFLASH MTL models
+
+```{r nested_models-mtl2-2, message = FALSE, results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "ants_deep_flash",
+                                       "freesurfer_aseg",
+                                       "ants_brain_t1" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+mtlData <- idpData$ants_deep_flash$Data
+mtlDataRight <- mtlData[,grep( 'right', colnames( mtlData ) )]
+mtlDataLeft <- mtlData[,grep( 'left', colnames( mtlData ) )]
+mtlDataBoth <- mtlDataLeft + mtlDataRight
+colnames( mtlDataBoth ) <- sub( 'left', 'both', colnames( mtlDataLeft ) )
+mtlData <- cbind( mtlData, mtlDataBoth )
+
+
+ukbAll <- read.csv( paste0( dataDirectory, '/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$ants_deep_flash$Data$Subject ),]
+mtlData <- mtlData[which( mtlData$Subject %in% ukbAll$Subject ),]
+idpData$ants_brain_t1$Data <- idpData$ants_brain_t1$Data[which( idpData$ants_brain_t1$Data$Subject %in% ukbAll$Subject ),]
+idpData$freesurfer_aseg$Data <- idpData$freesurfer_aseg$Data[which( idpData$freesurfer_aseg$Data$Subject %in% ukbAll$Subject ),]
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+hemispheres <- c( 'right', 'left', 'both' )
+
+modelRegions <- c( 'MTL',
+                   'hippocampus', 'extra.hippocampal',
+                   'DG.CA2.CA3.CA4', 'CA1', 'subiculum', 'aLEC', 'pMEC', 'perirhinal', 'parahippocampal' )
+
+modelRegionsColumnLabels <- c( 'MTL',
+                   'hippocampus', 'extra.hippocampal',
+                   'DG.CA2.CA3.CA4', 'CA1', 'subiculum', 'aLEC', 'pMEC', 'perirhinal', 'parahippocampal' )
+
+pvalues <- array( data = 0, dim = c( length( modelRegions ), length( regressands ) ) )
+coefficients <- array( data = 0, dim = c( length( modelRegions ), length( regressands ) ) )
+standardErrors <- array( data = 0, dim = c( length( modelRegions ), length( regressands ) ) )
+
+for( i in seq.int( length( regressands ) ) )
+  {
+  # cat( "## vs.", regressands[i], "\n" )
+
+  # cat( "### Models\n\n" )
+
+  mtlLm <- list()
+  for( j in seq.int( length( modelRegions ) ) )
+    {
+    # cat( "* Model ", j, ":\n" )
+    if( regressands[i] == "Age" )
+      {
+      modelFormula <- formula( paste( regressands[i], " ~ BrainVolume + Sex + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      } else {
+      modelFormula <- formula( paste( regressands[i], " ~ Age + Age^2 + Sex + Age * Sex + BrainVolume + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      }
+    # print( modelFormula )
+    cat( "\n" )
+
+    k <- 3 # both hemispheres
+
+    modelData <- mtlData[, grep( paste0( hemispheres[k], "." ), colnames( mtlData ) )]
+    colnames( modelData ) <- gsub( paste0( hemispheres[k], "." ), "", colnames( modelData ) )
+
+    modelData$BrainVolume = ( idpData$ants_brain_t1$Data$Volume + ukbAll$f.25010.2.0 + idpData$freesurfer_aseg$Data$f.26514 ) / 3
+    modelData$Sex = ukbAll$f.22001.0.0
+    modelData$Site = as.factor(ukbAll$f.54.2.0)
+    modelData$Age = ukbAll$f.21003.2.0
+    modelData$FluidIntelligenceScore <- ukbAll$f.20191.0.0
+    modelData$NeuroticismScore <- ukbAll$f.20127.0.0
+    modelData$NumericMemory <- ukbAll$f.20240.0.0
+
+    mtlLm[[j]] <- lm( modelFormula, modelData )
+
+    mtlLmSummary <- summary( mtlLm[[j]] )
+
+    pvalues[j, i] <- mtlLmSummary$coefficients[modelRegions[j],4]
+    coefficients[j, i] <- mtlLmSummary$coefficients[modelRegions[j],1]
+    standardErrors[j, i] <- mtlLmSummary$coefficients[modelRegions[j],2]
+
+    }
+
+  # stargazer::stargazer( mtlLm[[1]], mtlLm[[2]], mtlLm[[3]],
+  #     type = "latex", header = FALSE, font.size = "footnotesize",
+  #     column.labels = modelRegionsColumnLabels[1:3],
+  #     single.row = TRUE,
+  #     # omit.stat = c( "Observations" ),
+  #     model.numbers = FALSE,
+  #     label = paste0( 'table::', regressands[i], ".mtl.", j ) )
+  # cat( "\n\n" )
+
+  # stargazer::stargazer( mtlLm[[4]], mtlLm[[5]], mtlLm[[6]],
+  #     type = "latex", header = FALSE, font.size = "footnotesize",
+  #     column.labels = modelRegionsColumnLabels[4:6],
+  #     single.row = TRUE,
+  #     # omit.stat = c( "Observations" ),
+  #     model.numbers = FALSE,
+  #     label = paste0( 'table::', regressands[i], ".mtl2.", j ) )
+
+  # stargazer::stargazer( mtlLm[[7]], mtlLm[[8]], mtlLm[[9]], mtlLm[[10]],
+  #     type = "latex", header = FALSE, font.size = "footnotesize",
+  #     column.labels = modelRegionsColumnLabels[7:10],
+  #     single.row = TRUE,
+  #     # omit.stat = c( "Observations" ),
+  #     model.numbers = FALSE,
+  #     label = paste0( 'table::', regressands[i], ".mtl3.", j ) )
+
+  # cat( "\n\n" )
+
+  }
+
+rownames( pvalues ) <- modelRegions
+colnames( pvalues ) <- regressands
+
+qvalues <- pvalues
+for( i in seq.int( ncol( pvalues ) ) )
+  {
+  qvalues[, i] <- p.adjust( pvalues[, i], "bonferroni" )
+  }
+
+rownames( coefficients ) <- modelRegions
+colnames( coefficients ) <- regressands
+rownames( standardErrors ) <- modelRegions
+colnames( standardErrors ) <- regressands
+
+# knitr::kable( coefficients, digits = 5, caption = "Coefficients" )
+# knitr::kable( standardErrors, digits = 5, caption = "Standard Error" )
+# knitr::kable( qvalues, digits = 5, caption = "Adjusted regional p-values" )
+
+xxx <- coefficients
+for( i in seq.int( nrow( coefficients ) ) )
+  {
+  for( j in seq.int( ncol( coefficients ) ) )
+    {
+    xxx[i, j] <- paste0( as.character( round( coefficients[i, j], digits = 5 ) ), 
+                         " (", as.character( round( standardErrors[i, j], digits = 5 ) ), ")" )
+    if( qvalues[i, j] < 0.01 )
+      {
+      xxx[i, j] <- paste0( xxx[i, j], "$^{***}$" )
+      } else if( qvalues[i, j] < 0.05 ) {
+      xxx[i, j] <- paste0( xxx[i, j], "$^{**}$" )
+      } else if( qvalues[i, j] < 0.1 ) {
+      xxx[i, j] <- paste0( xxx[i, j], "$^{*}$" )
+      }
+    } 
+  }
+
+knitr::kable( xxx, caption = "Results MTL2" )
+```
+

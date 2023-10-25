@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: ""
+authors:
+  - family-names: Tustison
+    given-names: Nick
+    orcid: https://orcid.org/0000-0001-9418-5103
+title: "ANTsX neuroimaging-derived structural phenotypes of UK Biobank"
+version: 0.0.0
+doi:
+date-released:

@@ -1,0 +1,211 @@
+
+\clearpage
+
+# Hippocampus and photoperiod
+
+This section is guided by the paper
+
+* N. A. Majrashi, "Sex differences in the association of photoperiod with hippocampal
+subfield volumes in older adults: A cross-sectional study in the UK Biobank cohort",
+_Brain Behavior_, June 2020, 10(6):e01593.
+
+## Visualize subject home location and photoperiod
+
+The authors used acquisition site instead of location of residence:
+
+> Participants lived in approximately equal proportions north and south of the scanner
+> and a mean distance of 31.1 km north or south of it (range 0.4–289 km). Therefore,
+> location of residence would have a negligible effect on photoperiod and we used the
+> photoperiod at the scanner location for all participants.
+
+Here, we use residence location.
+
+```{r photoperiod-plot, message = FALSE, results = 'asis', echo = FALSE, eval = TRUE}
+library( ggmap )
+library( geosphere )
+
+imagingSite <- data.frame(
+                Location = c( "Cheadle", "Reading", "Newcastle", "Bristol" ),
+                Coding = c( 11025, 11026, 11027, 11028 ),
+                Longitude = c( -2.21, -0.978, -1.62, -2.59 ),
+                Latitude = c( 53.4, 51.5, 55.0, 51.5 ) )
+useImagingSite <- FALSE
+
+baseDirectory <- "../Data/ukbiobank/"
+
+ukbAll <- read.csv( paste0( baseDirectory, "ukb50844_imaging_only_Brian.csv" ) )
+ukbAll$photoPeriod <- daylength( ukbAll$Latitude, ukbAll$f.53.2.0 )
+
+if( useImagingSite )
+  {
+  for( i in seq.int( nrow( imagingSite ) ) )
+    {
+    ukbAll$Latitude[data$f.54.2.0 == imagingSite$Coding[i]] <- imagingSite$Latitude[i]
+    ukbAll$Longitude[data$f.54.2.0 == imagingSite$Coding[i]] <- imagingSite$Longitude[i]
+    }
+  } else {
+  ukbAll <- ukbAll[which( ! is.na( ukbAll$Longitude ) ),]
+  }
+
+numberOfSubjectsToPlot <- 5000
+subjectIndices <- sample.int( nrow( ukbAll ), size = numberOfSubjectsToPlot )
+plotData <- ukbAll[subjectIndices,]
+
+ukMapFile <- "../Scripts/ukMap.RData"
+if( file.exists( ukMapFile ) )
+  {
+  load( ukMapFile )
+  } else {
+  ukMap <- get_map( location = "Great Britain", source = "google", maptype = "terrain", zoom = 5 )
+  }
+
+ukPlot <- ggmap( ukMap ) +
+             geom_point( aes( x = Longitude, y = Latitude, color = photoPeriod ), data = plotData, alpha = 0.3, size = 1 ) +
+             scale_colour_gradientn( colours = rev( c( 'gold', 'orange', 'red', 'darkred', 'red4', 'black'  ) ) ) +
+             xlab( "Longitude" ) +
+             ylab( "Latitude" ) +
+             ggtitle( "Home location" )
+print( ukPlot )
+# ggsave( paste0( baseDirectory, "ukbbMap.pdf" ), ukPlot, units = "in", width = 10, height = 10 )
+```
+
+
+## Correlations on whole hippocampal volumes
+
+```{r photoperiod-partial-correlations, message = FALSE, results = 'asis', echo = FALSE, eval = TRUE}
+
+##########################
+#
+# look at hippocampal volumes
+#
+
+idpData <- loadIdpData( whichData = c( "fsl_other",
+                                       "fsl_fast",
+                                       "freesurfer_aseg",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "ants_deep_flash",
+                                       "hippmapper" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+
+fsl_other <- data.frame( Subject = idpData$fsl_other$Subject,
+                         right.hippocampus = idpData$fsl_other$f.25020,
+                         left.hippocampus = idpData$fsl_other$f.25019 )
+fsl_other <- fsl_other[which( fsl_other$Subject %in% ukbAll$f.eid ),]
+
+fsl_fast <- data.frame( Subject = idpData$fsl_fast$Subject,
+                        right.hippocampus = idpData$fsl_fast$f.25887,
+                        left.hippocampus = idpData$fsl_fast$f.25886 )
+fsl_fast <- fsl_fast[which( fsl_fast$Subject %in% ukbAll$f.eid ),]
+
+freesurfer_aseg <- data.frame( Subject = idpData$freesurfer_aseg$Subject,
+                               right.hippocampus = idpData$freesurfer_aseg$f.26593,
+                               left.hippocampus = idpData$freesurfer_aseg$f.26562 )
+freesurfer_aseg <- freesurfer_aseg[which( freesurfer_aseg$Subject %in% ukbAll$f.eid ),]
+
+freesurfer_hippocampus <- data.frame( Subject = idpData$freesurfer_hippocampus_mapped2deepflash$Subject,
+                                      right.hippocampus = idpData$freesurfer_hippocampus_mapped2deepflash$right.hippocampus,
+                                      left.hippocampus = idpData$freesurfer_hippocampus_mapped2deepflash$left.hippocampus )
+freesurfer_hippocampus <- freesurfer_hippocampus[which( freesurfer_hippocampus$Subject %in% ukbAll$f.eid ),]
+
+ants_deep_flash <- data.frame( Subject = idpData$ants_deep_flash$Subject,
+                               right.hippocampus = idpData$ants_deep_flash$right.hippocampus,
+                               left.hippocampus = idpData$ants_deep_flash$left.hippocampus )
+ants_deep_flash <- ants_deep_flash[which( ants_deep_flash$Subject %in% ukbAll$f.eid ),]
+
+ants_deep_flash_mtl <- data.frame( Subject = idpData$ants_deep_flash$Subject,
+                                   right.hippocampus = idpData$ants_deep_flash$right.MTL,
+                                   left.hippocampus = idpData$ants_deep_flash$left.MTL )
+ants_deep_flash_mtl <- ants_deep_flash_mtl[which( ants_deep_flash_mtl$Subject %in% ukbAll$f.eid ),]
+
+ants_deep_flash_other <- data.frame( Subject = idpData$ants_deep_flash$Subject,
+                                     right.hippocampus = idpData$ants_deep_flash$right.extra.hippocampal,
+                                     left.hippocampus = idpData$ants_deep_flash$left.extra.hippocampal )
+ants_deep_flash_other <- ants_deep_flash_other[which( ants_deep_flash_other$Subject %in% ukbAll$f.eid ),]
+
+hippmapper <- idpData$hippmapper[which( idpData$hippmapper$Subject %in% ukbAll$f.eid ),]
+
+ukbAll <- ukbAll[which( ukbAll$f.eid %in% hippmapper$Subject ),]
+
+hippocampalPipelines <- list()
+hippocampalPipelines[[1]] <- fsl_fast
+hippocampalPipelines[[2]] <- fsl_other
+hippocampalPipelines[[3]] <- freesurfer_aseg
+hippocampalPipelines[[4]] <- freesurfer_hippocampus
+hippocampalPipelines[[5]] <- hippmapper
+hippocampalPipelines[[6]] <- ants_deep_flash
+# hippocampalPipelines[[7]] <- ants_deep_flash_mtl
+# hippocampalPipelines[[8]] <- ants_deep_flash_other
+# hippocampalPipelineNames <- c( "FSLfast", "FSLother", "FSaseg", "FShipp", "Hippmapper", "DeepFlash", "DeepFlashMtl", "DeepFlashOther" )
+hippocampalPipelineNames <- c( "FSLfast", "FSLother", "FSaseg", "FShipp", "Hippmapper", "DeepFlash" )
+
+ppDf <- data.frame( HippocampalVolume = rep( NA, length( ukbAll$photoPeriod ) ),
+                    PhotoPeriod = ukbAll$photoPeriod,
+                    EuclideanDistanceToCoast = ukbAll$f.24508.0.0,
+                    Age = ukbAll$f.21003.2.0,
+                    Sex = ukbAll$f.22001.0.0,
+                    Site = ukbAll$f.54.2.0,
+                    TotalBrainVolume = ukbAll$f.25010.2.0 )
+
+for( i in seq.int( length( hippocampalPipelines ) ) )
+  {
+  cat( "* Partial correlation (Volume ~ PhotoPeriod) for ", hippocampalPipelineNames[i], "\n\n" )
+
+  hippoFormula <-  as.formula( "HippocampalVolume ~ Age + TotalBrainVolume + PhotoPeriod + Sex" )
+
+  hippoLm <- list()
+  for( hemi in c( "Left", "Right" ) )
+    {
+    if( hemi == "Left" )
+      {
+      ppDf$HippocampalVolume <- hippocampalPipelines[[i]]$left.hippocampus
+      hippoLm[[1]] <- lm( hippoFormula, data = ppDf )
+      } else {
+      ppDf$HippocampalVolume <- hippocampalPipelines[[i]]$right.hippocampus
+      hippoLm[[2]] <- lm( hippoFormula, data = ppDf )
+      }
+
+    volumeResiduals <- lm( as.formula( "HippocampalVolume ~ Age + TotalBrainVolume + Sex" ), data = ppDf )$residuals
+    photoPeriodResiduals <- lm( as.formula( "PhotoPeriod ~ Age + TotalBrainVolume + Sex" ), data = ppDf )$residuals
+
+    correlationValue <- cor( photoPeriodResiduals, volumeResiduals )
+    correlationP <- cor.test( photoPeriodResiduals, volumeResiduals )$p.value
+
+    cat( "    *", hemi, ":", correlationValue, "( p.value =", correlationP, ")\n\n" )
+    }
+  }
+
+```
+
+\clearpage
+
+## Regression on whole hippocampal volumes
+
+```{r photoperiod-regressions, message = FALSE, results = 'asis', echo = FALSE, eval = TRUE}
+
+cat( "**Formula:  **\n" )
+print( hippoFormula )
+cat( "\n\n" )
+
+for( i in seq.int( length( hippocampalPipelines ) ) )
+  {
+  hippoLm <- list()
+  for( hemi in c( "Left", "Right" ) )
+    {
+    if( hemi == "Left" )
+      {
+      ppDf$HippocampalVolume <- hippocampalPipelines[[i]]$left.hippocampus
+      hippoLm[[1]] <- lm( hippoFormula, data = ppDf )
+      } else {
+      ppDf$HippocampalVolume <- hippocampalPipelines[[i]]$right.hippocampus
+      hippoLm[[2]] <- lm( hippoFormula, data = ppDf )
+      }
+    }
+  stargazer::stargazer( hippoLm[[1]], hippoLm[[2]],
+      type = "latex", header = FALSE,
+      column.labels = brainPipelineNames[c( "Left", "Right" )],
+      label = paste0( 'table::photoperiod', i ),
+      title = hippocampalPipelineNames[i] )
+  }
+
+```

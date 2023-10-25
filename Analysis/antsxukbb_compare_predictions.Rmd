@@ -1,0 +1,724 @@
+\clearpage
+
+```{r compare-predictions, message = FALSE, results = 'asis', echo = FALSE, fig.show = "hold", fig.align = "center", eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/ExperimentalResults/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- '../Text/Figures/'
+
+
+targetMeasures <- c( "Age",
+                     "FluidIntelligenceScore",
+                     "NeuroticismScore",
+                     "NumericMemory",
+                     "BMI",
+                     "TownsendDeprivationIndex",
+                     "GeneticSex",
+                     "Hearing",
+                     #"Alzheimers", "PairsTest", "DurationTrailMaking"
+                    "RiskTaking",
+                    "SameSexIntercourse",
+                     "Smoking",
+                     "Alcohol"
+                     # , "NonviablePregnancy"
+                     )
+
+targetMeasuresType <- c( "regression",            # Age
+                         "regression",            # FluidIntelligence
+                         "regression",            # Neuroticism
+                         "regression",            # NumericMemory
+                         "regression",            # BMI
+                         "regression",            # TownsendDeprivationIndex
+                         "binary classification", # GeneticSex
+                         "binary classification",  # Hearing
+                         # ,
+                         # "multi classification",  # Alzheimers
+                         # "multi classification",  # Parkinsons
+                         # "regression",            # PairsTest
+                         # "regression"             # DurationTrailMaking
+
+                         "binary classification",              # RiskTaking
+                         "binary classification",               # SameSexIntercourse
+                         "multi classification",  # Smoking
+                         "multi classification"  # Alcohol
+                        #  ,
+                        #  "binary classification"               # NonviablePregnancy
+                      )
+
+targetAccuracyType <- c( "RMSE",            # Age
+                         "RMSE",            # FluidIntelligence
+                         "RMSE",            # Neuroticism
+                         "RMSE",            # NumericMemory
+                         "RMSE",            # BMI
+                         "RMSE",            # TownsendDeprivationIndex
+                         "AUC",             # GeneticSex
+                         "AUC",              # Hearing
+                         # ,
+                         # "AUC",  # Alzheimers
+                         # "AUC",  # Parkinsons
+                         # "RMSE",            # PairsTest
+                         # "RMSE"             # DurationTrailMaking
+
+                         "AUC",              # RiskTaking
+                         "AUC",                 # SameSexIntercourse
+                         "AUC",             # Smoking
+                         "AUC"             # Alcohol
+                        # ,
+                        #  "AUC"               # NonviablePregnancy
+
+                      )
+
+targetBestOptimizationType <- c( "Linear",            # Age
+                                 "Linear" ,           # FluidIntelligence
+                                 "Lasso", # "Linear", # Neuroticism
+                                 "Lasso", # "Linear", # NumericMemory
+                                 "Linear",            # BMI
+                                 "Linear",            # TownsendDeprivationIndex
+                                 "Linear",            # GeneticSex
+                                 "Linear",            # Hearing
+                                 # ,
+                                #  "DenseNet",         # PairsTest
+                                #  "DenseNet"          # DurationTrailMaking
+                                 "Linear" ,            # Risk taking
+                                 "DenseNet",           # SameSexIntercouse
+                                 "DenseNet",           # Smoking
+                                 "DenseNet"  #"Lasso"  # Alcohol
+                              )
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+# load data to just get descriptions
+idpData <- loadIdpData( whichData = c( "fsl_fast",
+                                       "fsl_first",
+                                       "fsl_other",
+                                       "freesurfer_aseg",
+                                       "freesurfer_dkt_cortical_thickness",
+                                       "freesurfer_dkt_cortical_volumes",
+                                       "freesurfer_hippocampus",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "freesurfer_hippocampus_amygdala",
+                                       "ants_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_volumes",
+                                       "ants_dkt_region_volumes",
+                                       "ants_deep_atropos",
+                                       "ants_brain_t1",
+                                       "ants_cerebellum",
+                                       "ants_deep_flash",
+                                       "ants_deep_flash_hippocampus",
+                                       "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+
+pipelineNames <- c( "FSL", "FreeSurfer", "ANTsX", "All" )
+
+pipelineDescriptions <- list()
+
+pipelineDescriptions <- list.append( pipelineDescriptions, c( paste0( idpData$fsl_fast$Description, ".fast" ),
+                                                        paste0( idpData$fsl_first$Description, ".first" ),
+                                                        paste0( idpData$fsl_other$Description, ".other" ) ) )
+
+pipelineDescriptions <- list.append( pipelineDescriptions, c( paste0( idpData$freesurfer_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$freesurfer_dkt_cortical_volumes$Description, ".dkt.volume" ),
+                                                        paste0( idpData$freesurfer_aseg$Description, ".aseg" ),
+                                                        paste0( idpData$freesurfer_hippocampus_amygdala$Description, ".hipp.amyg" ) ) )
+
+pipelineDescriptions <- list.append( pipelineDescriptions, c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                                                        paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                                                        paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                                                        paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                                                        paste0( idpData$ants_cerebellum$Description, ".cerebellum" ),
+                                                        idpData$sysu_wmh$Description,
+                                                        idpData$ants_brain_t1$Description ) )
+
+for( i in seq.int( length( pipelineDescriptions ) ) )
+  {
+  pipelineDescriptions[[i]] <- pipelineDescriptions[[i]][which( ! grepl( "Subject", pipelineDescriptions[[i]] ) )]
+  pipelineDescriptions[[i]] <- paste0( pipelineNames[i], ".", pipelineDescriptions[[i]] )
+  }
+
+allModelsDescriptions <- c( pipelineDescriptions[[1]], pipelineDescriptions[[2]], pipelineDescriptions[[3]] )
+
+pipelineDescriptions <- list.append( pipelineDescriptions, allModelsDescriptions )
+
+#####################################################################################
+#
+# Remove highly correlated IDPs for LMs
+#
+
+pipelineDescriptionsLm <- pipelineDescriptions
+pipelineDescriptionsLm[[3]] <- pipelineDescriptions[[3]][-c( 251 )]
+pipelineDescriptionsLm[[4]] <- pipelineDescriptions[[4]][-c( 718 )]
+
+
+
+
+#####################################################################################
+#
+# lotting
+#
+
+includeMRMR <- FALSE
+
+numberOfRankedImportanceVariablesToPrint <- 25
+
+# models <- c( "xgboost", "xgboost5000", "DL", "DL5000", "DL5000.4Layers", "TabNet", "TabNet5000", "TabNet5000.LessSparse" )
+# models <- c( "XGBoost", "XGBoost5000", "DenseNet", "DenseNet5000", "TabNet", "TabNet5000" )
+models <- c( "Linear", "Lasso", "XGBoost", "DenseNet", "TabNet"  )
+
+allMeasuresDf <- data.frame()
+xcountryRankingDf <- data.frame()
+
+for( i in seq.int( length( targetMeasures ) ) )
+  {
+
+  targetName <- targetMeasures[i]
+
+  cat( "# ", targetName )
+  cat( "\n\n" )
+
+
+  measureDf <- data.frame()
+
+
+  dlDf <- NULL
+  xgbDf <- NULL
+  tabnetDf <- NULL
+  lmDf <- NULL
+  lassoDf <- NULL
+
+  for( j in seq.int( length( pipelineNames ) ) )
+    {
+    xgbMeasureFileName <- paste0( dataDirectory, "Xgboost90PercentTrainingData/ukbiobank_none_xgboost_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+    modelXgbDf <- read.csv( xgbMeasureFileName )[1:10,c( 1, 2 )]
+    colnames( modelXgbDf )[2] <- "Measure"
+    modelXgbDf$Type <- "XGBoost"
+    modelXgbDf$Target <- targetName
+
+    dlMeasureFilename <- paste0( dataDirectory, "ANTsXNet90PercentTrainingData/", targetName, "/Measures-", pipelineNames[j], "-", targetName, ".csv" )
+    modelDlDf <- read.csv( dlMeasureFilename )
+    modelDlDf <- data.frame( Model = pipelineNames[j],
+                             Measure = modelDlDf$X0,
+                             Type = "DenseNet",
+                             Target = targetName )
+
+    tabnetMeasureFileName <- paste0( dataDirectory, "Tabnet90PercentTrainingData/", targetName, "/Measures-", pipelineNames[j], "-", targetName, ".csv" )
+    modelTabNetDf <- read.csv( tabnetMeasureFileName )
+    modelTabNetDf <- data.frame( Model = pipelineNames[j],
+                             Measure = modelTabNetDf$Measure,
+                             Type = "TabNet",
+                             Target = targetName )
+
+    lmMeasureFileName <- paste0( dataDirectory, "LinearModel90PercentTrainingData/ukbiobank_none_lm_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+    modelLmDf <- read.csv( lmMeasureFileName )[1:10,c( 1, 2 )]
+    colnames( modelLmDf )[2] <- "Measure"
+    modelLmDf$Type <- "Linear"
+    modelLmDf$Target <- targetName
+
+    lassoMeasureFileName <- paste0( dataDirectory, "LinearModel90PercentTrainingData/ukbiobank_none_glmnet_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+    modelLassoDf <- read.csv( lassoMeasureFileName )[1:10,c( 1, 2 )]
+    colnames( modelLassoDf )[2] <- "Measure"
+    modelLassoDf$Type <- "Lasso"
+    modelLassoDf$Target <- targetName
+
+    if( j == 1 )
+      {
+      dlDf <- modelDlDf
+      xgbDf <- modelXgbDf
+      tabnetDf <- modelTabNetDf
+      lmDf <- modelLmDf
+      lassoDf <- modelLassoDf
+      } else {
+      dlDf <- rbind( dlDf, modelDlDf )
+      xgbDf <- rbind( xgbDf, modelXgbDf )
+      tabnetDf <- rbind( tabnetDf, modelTabNetDf )
+      lmDf <- rbind( lmDf, modelLmDf )
+      lassoDf <- rbind( lassoDf, modelLassoDf )
+      }
+    }
+
+  measureDf <- rbind( measureDf, xgbDf, dlDf, tabnetDf, lmDf, lassoDf )
+  allMeasuresDf <- rbind( allMeasuresDf, measureDf )
+
+  ylabelText <- "RMSE"
+  if( grepl( "classification", targetMeasuresType[i] ) )
+    {
+    ylabelText <- "AUC"
+    }
+
+  plotColorValues <- c( "#C3BA45", "#519DB8", "#D92120", "#791C81" )
+
+  measureDf$Model <- factor( measureDf$Model, levels = pipelineNames )
+  measureDf$Type <- factor( measureDf$Type, levels = models )
+  comparePlot <- ggplot( data = measureDf, aes( y = Measure, x = Type, fill = Model, colour = Model ) ) +
+               geom_point( position = position_jitterdodge(), alpha = 0.5 ) +
+               geom_boxplot( color="black", alpha = 0.75 ) +
+               ggtitle( paste0( targetName, " (", targetMeasuresType[i], ")" ) ) +
+               ylab( ylabelText ) +
+               xlab( "IDP Set" ) +
+               # theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) ) +
+               scale_fill_manual( values = plotColorValues ) +
+               scale_colour_manual( values = plotColorValues ) +
+               theme( axis.text.x = element_text( face = "bold" ) )
+  ggplot2::ggsave( paste0( figuresDirectory, "compare_predictions_", targetName, ".pdf" ), comparePlot, width = 7, height = 3, units = "in" )
+
+  cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "compare_predictions_", targetName, ".pdf" ) ), ")", sep = "" )
+
+  cat( "\n\n" )
+
+  ###########
+  #
+  #
+  # Shap values
+  #
+  #
+  ###########
+
+
+  shapDescriptions <- list()
+  for( j in seq.int( length( pipelineDescriptions ) ) )
+    {
+    if( targetName == "Age" )
+      {
+      shapDescriptions[[j]] <- c( "GeneticSex", pipelineDescriptions[[j]] )
+      } else if( targetName == "GeneticSex" || ( targetName == "NonviablePregnancy" && ( models[k] != "XGBoost" && models[k] != "Linear" ) ) ) {
+      shapDescriptions[[j]] <- c( "Age", pipelineDescriptions[[j]] )
+      } else {
+      shapDescriptions[[j]] <- c( "Age", "GeneticSex", pipelineDescriptions[[j]] )
+      }
+    }
+
+  shapForReordering <- list()
+  for( j in seq.int( length( pipelineNames ) ) )
+    {
+    # cat( "## IDP Set:  ", pipelineNames[j], "\n\n" )
+
+    rankedFeaturesDf <- list()
+
+    shapForReordering[[j]] <- data.frame()
+    for( k in seq.int( length( models ) ) )
+      {
+
+      shapDf <- NULL
+      if( grepl( "DenseNet", models[k] ) )
+        {
+        shapFilename <- ""
+        if( grepl( "5000", models[k] ) )
+          {
+          if( grepl( "4Layers", models[k] ) )
+            {
+            shapFilename <- paste0( dataDirectory, "ANTsXNet5000TrainingData4Layers/", targetName, "/ShapValues-", pipelineNames[j], "-", targetName, ".csv" )
+            } else {
+            shapFilename <- paste0( dataDirectory, "ANTsXNet5000TrainingData/", targetName, "/ShapValues-", pipelineNames[j], "-", targetName, ".csv" )
+            }
+          } else {
+          shapFilename <- paste0( dataDirectory, "ANTsXNet90PercentTrainingData/", targetName, "/ShapValues-", pipelineNames[j], "-", targetName, ".csv" )
+          }
+        shapDf <- read.csv( shapFilename )
+        if( any( is.na( colnames( shapDf ) ) ) )
+          {
+          cat( shapeFilename, "\n\n" )
+          }
+
+        # if( length( colnames( shapDf ) ) == length( colnames( shapForReordering[[j]] ) ) )
+        #   {
+        #   shapDf <- shapDf[, colnames( shapForReordering[[j]] )]
+        #   } else {
+        #   stop( paste0( pipelineNames[j], " -> ", models[k] ) )
+        #   }
+        } else if( grepl( "XGBoost", models[k] ) ){
+        shapFilename <- ""
+        if( grepl( "5000", models[k] ) )
+          {
+          shapFilename <- paste0( dataDirectory, "Xgboost5000TrainingData/ukbiobank_none_xgboost_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          } else {
+          shapFilename <- paste0( dataDirectory, "Xgboost90PercentTrainingData/ukbiobank_none_xgboost_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          }
+        shapDf <- read.csv( shapFilename )
+        shapDf <- shapDf[, -c( 1, 2, 3, 4, 5 )]
+        if( targetName == "NonviablePregnancy" )
+          {
+          shapDf$GeneticSex <- NULL
+          }
+        if( prod( dim( shapForReordering[[j]] ) ) == 0 )
+          {
+          shapForReordering[[j]] <- shapDf
+          }
+        } else if( grepl( "Linear", models[k] ) ){
+        shapFilename <- ""
+        if( grepl( "5000", models[k] ) )
+          {
+          shapFilename <- paste0( dataDirectory, "LinearModel5000TrainingData/ukbiobank_none_lm_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          } else {
+          shapFilename <- paste0( dataDirectory, "LinearModel90PercentTrainingData/ukbiobank_none_lm_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          }
+        shapDf <- read.csv( shapFilename )
+        shapDf <- shapDf[, -c( 1, 2, 3, 4, 5 )]
+        if( targetName == "NonviablePregnancy" )
+          {
+          shapDf$GeneticSex <- NULL
+          }
+        if( prod( dim( shapForReordering[[j]] ) ) == 0 )
+          {
+          shapForReordering[[j]] <- shapDf
+          }
+        } else if( grepl( "Lasso", models[k] ) ){
+        shapFilename <- ""
+        if( grepl( "5000", models[k] ) )
+          {
+          shapFilename <- paste0( dataDirectory, "LinearModel5000TrainingData/ukbiobank_none_glmnet_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          } else {
+          shapFilename <- paste0( dataDirectory, "LinearModel90PercentTrainingData/ukbiobank_none_glmnet_", targetName, "_prediction_", pipelineNames[j], ".csv" )
+          }
+        shapDf <- read.csv( shapFilename )
+        shapDf <- shapDf[, -c( 1, 2, 3, 4, 5 )]
+        if( targetName == "NonviablePregnancy" )
+          {
+          shapDf$GeneticSex <- NULL
+          }
+        if( prod( dim( shapForReordering[[j]] ) ) == 0 )
+          {
+          shapForReordering[[j]] <- shapDf
+          }
+        } else {
+        shapFilename <- ""
+        if( grepl( "5000", models[k] ) )
+          {
+          if( grepl( "LessSparse", models[k] ) )
+            {
+            shapFilename <- paste0( dataDirectory, "TabNet5000TrainingDataLessSparse/", targetName, "/Measures-", pipelineNames[j], "-", targetName, ".csv" )
+            } else {
+            shapFilename <- paste0( dataDirectory, "TabNet5000TrainingData/", targetName, "/Measures-", pipelineNames[j], "-", targetName, ".csv" )
+            }
+          } else {
+          shapFilename <- paste0( dataDirectory, "TabNet90PercentTrainingData/", targetName, "/Measures-", pipelineNames[j], "-", targetName, ".csv" )
+          }
+        shapDf <- read.csv( shapFilename )
+        shapDf <- shapDf[, -c( 1 )]
+        }
+
+      shapAverage <- abs( colMeans( shapDf ) )
+      orderedDescriptions <- shapDescriptions[[j]][order( shapAverage, decreasing = TRUE )]
+      orderedShapAverage <- shapAverage[order( shapAverage, decreasing = TRUE )]
+      orderedNormalizedShapAverage <- ( orderedShapAverage - min( orderedShapAverage ) ) /
+                                      ( max( orderedShapAverage ) - min( orderedShapAverage ) )
+
+      orderedPackageNames <- c()
+      orderedPipelineNames <- c()
+      for( f in seq.int( length( orderedDescriptions ) ) )
+        {
+        if( grepl( "ANTsX", orderedDescriptions[f] ) )
+          {
+          orderedPackageNames[f] <- "ANTsX"
+          orderedDescriptions[f] <- gsub( "ANTsX.", "", orderedDescriptions[f] )
+          if( grepl( "dkt.thickness", orderedDescriptions[f] ) )
+            {
+            orderedPipelineNames[f] <- "Thickness"
+            orderedDescriptions[f] <- gsub( ".thickness.dkt.thickness", "", orderedDescriptions[f] )
+            } else if( grepl( "dkt.cortical.volume", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "Cortical"
+            orderedDescriptions[f] <- gsub( ".dkt.cortical.volume", "", orderedDescriptions[f] )
+            } else if( grepl( "dkt.region.volume", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "Region"
+            orderedDescriptions[f] <- gsub( ".dkt.region.volume", "", orderedDescriptions[f] )
+            } else if( grepl( "deep.flash", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "DeepFLASH"
+            orderedDescriptions[f] <- gsub( ".deep.flash", "", orderedDescriptions[f] )
+            } else if( grepl( "atropos", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "Atropos"
+            orderedDescriptions[f] <- gsub( ".atropos", "", orderedDescriptions[f] )
+            } else if( grepl( "sysu", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "SYSU WMH"
+            orderedDescriptions[f] <- gsub( "sysu.", "", orderedDescriptions[f] )
+            } else if( grepl( "cerebellum", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "Cereb"
+            orderedDescriptions[f] <- gsub( ".cerebellum", "", orderedDescriptions[f] )
+            } else {
+            orderedPipelineNames[f] <- "Other"
+            }
+          orderedDescriptions[f] <- gsub( "\\.", " ", orderedDescriptions[f] )
+          orderedDescriptions[f] <- gsub( "left", "Left", orderedDescriptions[f] )
+          orderedDescriptions[f] <- gsub( "right", "Right", orderedDescriptions[f] )
+          orderedDescriptions[f] <- gsub( "cerebellar", "Cerebellar", orderedDescriptions[f] )
+          } else if( grepl( "FSL", orderedDescriptions[f] ) ) {
+          orderedPackageNames[f] <- "FSL"
+          orderedDescriptions[f] <- gsub( "FSL.", "", orderedDescriptions[f] )
+          if( grepl( "fast", orderedDescriptions[f] ) )
+            {
+            orderedPipelineNames[f] <- "FAST"
+            orderedDescriptions[f] <- gsub( ".fast", "", orderedDescriptions[f]  )
+            } else if( grepl( "first", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "FIRST"
+            orderedDescriptions[f] <- gsub( ".first", "", orderedDescriptions[f]  )
+            } else {
+            orderedPipelineNames[f] <- "Other"
+            orderedDescriptions[f] <- gsub( ".other", "", orderedDescriptions[f]  )
+            }
+          } else if( grepl( "FreeSurfer", orderedDescriptions[f] ) ) {
+          orderedPackageNames[f] <- "FreeSurfer"
+          orderedDescriptions[f] <- gsub( "FreeSurfer.", "", orderedDescriptions[f] )
+          if( grepl( "dkt.thickness", orderedDescriptions[f] ) )
+            {
+            orderedPipelineNames[f] <- "Thickness"
+            orderedDescriptions[f] <- gsub( ".dkt.thickness", "", orderedDescriptions[f] )
+            } else if( grepl( "dkt.volume", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "Volume"
+            orderedDescriptions[f] <- gsub( ".dkt.volume", "", orderedDescriptions[f] )
+            } else if( grepl( "aseg", orderedDescriptions[f] ) ) {
+            orderedPipelineNames[f] <- "ASEG"
+            orderedDescriptions[f] <- gsub( ".aseg", "", orderedDescriptions[f] )
+            } else {
+            orderedPipelineNames[f] <- "HippAmyg"
+            orderedDescriptions[f] <- gsub( ".hipp.amyg", "", orderedDescriptions[f] )
+            }
+          } else {
+          orderedPackageNames[f] <- "--"
+          orderedPipelineNames[f] <- "--"
+          }
+        }
+
+      # shapPrintDf <- data.frame( Feature = orderedDescriptions[1:numberOfRankedImportanceVariablesToPrint],
+      #                            Value = orderedShapAverage[1:numberOfRankedImportanceVariablesToPrint]
+      #                          )
+      rankedFeaturesDf[[k]] <- data.frame( Package = orderedPackageNames,
+                                           Pipeline = orderedPipelineNames,
+                                           Feature = orderedDescriptions
+                                           # Value = orderedShapAverage
+                                         )
+
+      shapPrintDf <- data.frame( Package = orderedPackageNames[1:numberOfRankedImportanceVariablesToPrint],
+                                           Pipeline = orderedPipelineNames[1:numberOfRankedImportanceVariablesToPrint],
+                                           Feature = orderedDescriptions[1:numberOfRankedImportanceVariablesToPrint]
+                                           # Value = orderedShapAverage
+                                         )
+
+      rownames( shapPrintDf ) <- NULL
+
+      if( pipelineNames[j] != "All" )
+        {
+        next
+        }
+      if( models[k] != targetBestOptimizationType[i] )
+        {
+        next
+        }
+
+      cat( "## Feature ranking:  ", models[k], "\n\n" )
+       
+      # Switch to this one (and render( output_format = "md" )) for README.md
+      # print( knitr::kable( shapPrintDf, digits = 3, format = "html", booktabs = TRUE, longtable = FALSE,
+      #   caption = targetMeasures[i] ) )
+
+      print( knitr::kable( shapPrintDf, digits = 3, format = "latex", booktabs = TRUE, longtable = FALSE,
+        caption = targetMeasures[i] ) )
+
+        cat( "* FSL\n\n",
+              "    * range: [", min( orderedShapAverage[which( orderedPackageNames == "FSL" )] ), ", ",
+                                max( orderedShapAverage[which( orderedPackageNames == "FSL" )] ), "]\n\n",
+              "    * std: ", sd( orderedShapAverage[which( orderedPackageNames == "FSL" )] ), "\n\n",
+              "    * skewness: ", skewness( orderedShapAverage[which( orderedPackageNames == "FSL" )] ), "\n\n"
+           )
+        cat( "* FreeSurfer\n\n",
+              "    * range: [", min( orderedShapAverage[which( orderedPackageNames == "FreeSurfer" )] ), ", ",
+                                max( orderedShapAverage[which( orderedPackageNames == "FreeSurfer" )] ), "]\n\n",
+              "    * std: ", sd( orderedShapAverage[which( orderedPackageNames == "FreeSurfer" )] ), "\n\n",
+              "    * skewness: ", skewness( orderedShapAverage[which( orderedPackageNames == "FreeSurfer" )] ), "\n\n"
+           )
+        cat( "* ANTsX\n\n",
+              "    * range: [", min( orderedShapAverage[which( orderedPackageNames == "ANTsX" )] ), ", ",
+                                max( orderedShapAverage[which( orderedPackageNames == "ANTsX" )] ), "]\n\n",
+              "    * std: ", sd( orderedShapAverage[which( orderedPackageNames == "ANTsX" )] ), "\n\n",
+              "    * skewness: ", skewness( orderedShapAverage[which( orderedPackageNames == "ANTsX" )] ), "\n\n"
+           )
+
+      rankingNumbers <- c( 10, 25, 50 )
+      for( r in seq.int( length( rankingNumbers ) ) )
+        {
+        cat( "### Package-based ranking (top", rankingNumbers[r], "features)\n\n" )
+
+
+        rankScore <- sum( which( orderedPackageNames == "FSL" )[seq.int(rankingNumbers[r])] )
+        sumScore <- sum( orderedShapAverage[which( orderedPackageNames == "FSL" )][seq.int(rankingNumbers[r])] )
+        normalizedSumScore <- sum( orderedNormalizedShapAverage[which( orderedPackageNames == "FSL" )][seq.int(rankingNumbers[r])] )
+        xcountryRankingDf <- rbind( xcountryRankingDf,
+                                    data.frame( Target = targetMeasures[i],
+                                                Package = "FSL",
+                                                Ranking = rankingNumbers[r],
+                                                RankScore = rankScore,
+                                                SumScore = sumScore,
+                                                NormalizedSumScore = normalizedSumScore ) )
+        cat( "* FSL: rank = ", rankScore, ", imp = ", sumScore, "\n\n" )
+
+        rankScore <- sum( which( orderedPackageNames == "FreeSurfer" )[seq.int(rankingNumbers[r])] )
+        sumScore <- sum( orderedShapAverage[which( orderedPackageNames == "FreeSurfer" )][seq.int(rankingNumbers[r])] )
+        normalizedSumScore <- sum( orderedNormalizedShapAverage[which( orderedPackageNames == "FreeSurfer" )][seq.int(rankingNumbers[r])] )
+        xcountryRankingDf <- rbind( xcountryRankingDf,
+                                    data.frame( Target = targetMeasures[i],
+                                                Package = "FreeSurfer",
+                                                Ranking = rankingNumbers[r],
+                                                RankScore = rankScore,
+                                                SumScore = sumScore,
+                                                NormalizedSumScore = normalizedSumScore ) )
+        cat( "* FreeSurfer: rank = ", rankScore, ", imp = ", sumScore, "\n\n" )
+
+        rankScore <- sum( which( orderedPackageNames == "ANTsX" )[seq.int(rankingNumbers[r])] )
+        sumScore <- sum( orderedShapAverage[which( orderedPackageNames == "ANTsX" )][seq.int(rankingNumbers[r])] )
+        normalizedSumScore <- sum( orderedNormalizedShapAverage[which( orderedPackageNames == "ANTsX" )][seq.int(rankingNumbers[r])] )
+        xcountryRankingDf <- rbind( xcountryRankingDf,
+                                    data.frame( Target = targetMeasures[i],
+                                                Package = "ANTsX",
+                                                Ranking = rankingNumbers[r],
+                                                RankScore = rankScore,
+                                                SumScore = sumScore,
+                                                NormalizedSumScore = normalizedSumScore ) )
+        cat( "* ANTsX: rank = ", rankScore, ", imp = ", sumScore, "\n\n" )
+
+        }
+
+      }
+
+    # MRMR
+
+    # if( includeMRMR )
+    #   {
+    #   outputCsvFilename <- paste0( dataDirectory, "MRMR/MRMR-", targetName, "_", pipelineNames[j], ".csv" )
+    #   if( file.exists( outputCsvFilename ) )
+    #     {
+    #     cat( "### MRMR feature importance ranking \n\n" )
+
+    #     mrmrFeatures <- read.csv( outputCsvFilename )
+    #     mrmrFeatures <- mrmrFeatures[order( abs( mrmrFeatures$Importance ), decreasing = TRUE ),]
+
+    #     mrmrFeaturesShort <- mrmrFeatures[1:numberOfRankedImportanceVariablesToPrint,]
+    #     rownames( mrmrFeaturesShort ) <- NULL
+    #     colnames( mrmrFeaturesShort ) <- c( "Feature", "Value" )
+
+    #     print( knitr::kable( mrmrFeaturesShort, digits = 3 ) )
+    #     rankedFeaturesDf[[k + 1]] <- mrmrFeatures
+    #     }
+    #   }
+
+    # Intersection
+    # topThird <- round( 0.33 * length( rankedFeaturesDf[[1]]$Feature ) )
+
+    # commonImportantFeatures <- rankedFeaturesDf[[1]]$Feature[1:topThird]
+    # for( l in seq.int( 2, length( rankedFeaturesDf ) ) )
+    #   {
+    #   commonImportantFeatures <- intersect( rankedFeaturesDf[[l]]$Feature[1:topThird], commonImportantFeatures )
+    #   }
+
+    # cat( "### Top third common features \n\n" )
+    # if( length( commonImportantFeatures ) > 0 )
+    #   {
+    #   commonDf <- data.frame( Feature = commonImportantFeatures )
+    #   rownames( commonDf ) <- NULL
+    #   print( knitr::kable( commonDf, digits = 3 ) )
+    #   }
+    }
+
+  cat( "\\clearpage" )
+
+  }
+
+allMeasuresDf$Model <- factor( allMeasuresDf$Model, levels = pipelineNames )
+for( i in seq.int( length( targetMeasures ) ) )
+  {
+  allMeasuresDf$Target[which( allMeasuresDf$Target == targetMeasures[i] )] <- paste0( targetMeasures[i], " (", targetAccuracyType[i], ")" )
+  }
+allMeasuresDf$Target <- factor( allMeasuresDf$Target, levels = paste0( targetMeasures, " (", targetAccuracyType, ")" ) )
+
+
+allMeasuresDf$Type <- factor( allMeasuresDf$Type, levels = models )
+comparePlot <- ggplot( data = allMeasuresDf, aes( y = Measure, x = Type, fill = Model, colour = Model ) ) +
+             geom_point( position = position_jitterdodge(), alpha = 0.5 ) +
+             geom_boxplot( color = "black", alpha = 0.75 ) +
+             ylab( "Accuracy" ) +
+             xlab( "" ) +
+             facet_wrap( ~Target, scale = "free", ncol = 2 ) +
+             # theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) ) +
+             scale_fill_manual( values = plotColorValues, name = "IDP Set:" ) +
+             scale_colour_manual( values = plotColorValues, name = "IDP Set:" ) +
+             theme( legend.position = "bottom",
+                    axis.text.x = element_text( size = 8 ) )
+ggplot2::ggsave( paste0( figuresDirectory, "compare_predictions_all.pdf" ), comparePlot, width = 6.5, height = 8, units = "in" )
+knitr::include_graphics( paste0( figuresDirectory, "compare_predictions_all.pdf" ) )
+
+
+rmseMeasuresDf <- allMeasuresDf[which( grepl( "RMSE", allMeasuresDf$Target ) ),]
+rmseMeasuresDf$Type <- factor( rmseMeasuresDf$Type, levels = models )
+comparePlot <- ggplot( data = rmseMeasuresDf, aes( y = Measure, x = Type, fill = Model, colour = Model ) ) +
+             geom_point( position = position_jitterdodge(), alpha = 0.5 ) +
+             geom_boxplot( color = "black", alpha = 0.75 ) +
+             ylab( "Accuracy" ) +
+             xlab( "" ) +
+             facet_wrap( ~Target, scale = "free", ncol = 2 ) +
+             # theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) ) +
+             scale_fill_manual( values = plotColorValues, name = "IDP Set:" ) +
+             scale_colour_manual( values = plotColorValues, name = "IDP Set:" ) +
+             theme( legend.position = "bottom",
+                    axis.text.x = element_text( size = 8 ) )
+ggplot2::ggsave( paste0( figuresDirectory, "compare_predictions_rmse.pdf" ), comparePlot, width = 6.5, height = 5, units = "in" )
+knitr::include_graphics( paste0( figuresDirectory, "compare_predictions_rmse.pdf" ) )
+
+aucMeasuresDf <- allMeasuresDf[which( grepl( "AUC", allMeasuresDf$Target ) ),]
+aucMeasuresDf$Type <- factor( rmseMeasuresDf$Type, levels = models )
+comparePlot <- ggplot( data = aucMeasuresDf, aes( y = Measure, x = Type, fill = Model, colour = Model ) ) +
+             geom_point( position = position_jitterdodge(), alpha = 0.5 ) +
+             geom_boxplot( color = "black", alpha = 0.75 ) +
+             ylab( "Accuracy" ) +
+             xlab( "" ) +
+             facet_wrap( ~Target, scale = "free", ncol = 2 ) +
+             # theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) ) +
+             scale_fill_manual( values = plotColorValues, name = "IDP Set:" ) +
+             scale_colour_manual( values = plotColorValues, name = "IDP Set:" ) +
+             theme( legend.position = "bottom",
+                    axis.text.x = element_text( size = 8 ) )
+ggplot2::ggsave( paste0( figuresDirectory, "compare_predictions_auc.pdf" ), comparePlot, width = 6.5, height = 5, units = "in" )
+knitr::include_graphics( paste0( figuresDirectory, "compare_predictions_auc.pdf" ) )
+
+
+
+xcountryRankingDf$Package <- factor( xcountryRankingDf$Package, levels = pipelineNames )
+xcountryRankingDf$Target <- factor( xcountryRankingDf$Target, levels = targetMeasures )
+rankingNumbers <- sort( unique( xcountryRankingDf$Ranking ) )
+for( i in seq.int( length( rankingNumbers ) ) )
+  {
+  xcountryRankingDf$Ranking[which( xcountryRankingDf$Ranking == rankingNumbers[i] )] <- paste0( "Top ", rankingNumbers[i], " features" )
+  }
+xcountryRankingDf$Ranking <- as.factor( xcountryRankingDf$Ranking )
+
+xcountryPlot <- ggplot( data = xcountryRankingDf, aes( x = Target, y = NormalizedSumScore, fill = Package ) ) +
+             geom_col( position = position_dodge()) +
+             ylab( "Ranking" ) +
+             xlab( "" ) +
+             scale_fill_manual( values = plotColorValues ) +
+             facet_wrap( ~Ranking, scale = "free", ncol = 1 ) +
+             # scale_colour_manual( values = plotColorValues ) +
+             theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) )
+ggplot2::ggsave( paste0( figuresDirectory, "compare_predictions_xcountry.pdf" ), xcountryPlot, width = 6.5, height = 8, units = "in" )
+knitr::include_graphics( paste0( figuresDirectory, "compare_predictions_xcountry.pdf" ) )
+
+
+
+
+
+
+# measureDf$Model <- factor( measureDf$Model, levels = pipelineNames )
+# xgbPlot <- ggplot( data = measureDf ) +
+#              # geom_jitter( aes( y = Measure, x = Model, color = Model ), alpha = 0.25 ) +
+#              geom_boxplot( aes( y = Measure, x = Model, fill = Type ), alpha = 0.75 ) +
+#              # theme( axis.text.x = element_text( angle = 45, vjust = 1, hjust=1 ) ) +
+#              theme( axis.text.x = element_text( face = "bold" ) ) +
+#              facet_wrap( ~Target, scale = "free" )
+# ggplot2::ggsave( paste0( figuresDirectory, "/rmse_auc_all.pdf" ), xgbPlot, width = 18, height = 12, units = "in" )
+
+# knitr::include_graphics( paste0( figuresDirectory, "/rmse_auc_all.pdf" ) )
+
+
+```
+
+
+

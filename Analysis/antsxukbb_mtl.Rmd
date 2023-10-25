@@ -1,0 +1,212 @@
+
+
+
+# Nested DeepFLASH MTL models
+
+```{r nested_models-mtl, message = FALSE, results = 'asis', eval = FALSE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "ants_deep_flash",
+                                       "freesurfer_aseg",
+                                       "ants_brain_t1" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+mtlData <- idpData$ants_deep_flash$Data
+mtlDataRight <- mtlData[,grep( 'right', colnames( mtlData ) )]
+mtlDataLeft <- mtlData[,grep( 'left', colnames( mtlData ) )]
+mtlDataBoth <- mtlDataLeft + mtlDataRight
+colnames( mtlDataBoth ) <- sub( 'left', 'both', colnames( mtlDataLeft ) )
+mtlData <- cbind( mtlData, mtlDataBoth )
+
+
+ukbAll <- read.csv( paste0( dataDirectory, '/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$ants_deep_flash$Data$Subject ),]
+mtlData <- mtlData[which( mtlData$Subject %in% ukbAll$Subject ),]
+idpData$ants_brain_t1$Data <- idpData$ants_brain_t1$Data[which( idpData$ants_brain_t1$Data$Subject %in% ukbAll$Subject ),]
+idpData$freesurfer_aseg$Data <- idpData$freesurfer_aseg$Data[which( idpData$freesurfer_aseg$Data$Subject %in% ukbAll$Subject ),]
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+hemispheres <- c( 'right', 'left', 'both' )
+
+modelRegions <- list()
+modelRegions[[1]] <- c( 'MTL' )
+modelRegions[[2]] <- c( 'hippocampus', 'extra.hippocampal' )
+modelRegions[[3]] <- c( 'DG_CA2_CA3_CA4', 'CA1', 'subiculum', 'aLEC', 'pMEC', 'perirhinal', 'parahippocampal' )
+
+for( i in seq.int( length( regressands ) ) )
+  {
+  cat( "## vs.", regressands[i], "\n" )
+
+  cat( "### Models\n\n" )
+
+  mtlRegionalRightLm <- list()
+  mtlRegionalLeftLm <- list()
+  mtlRegionalBothLm <- list()
+  for( j in seq.int( length( modelRegions ) ) )
+    {
+    cat( "* Model ", j, ":\n" )
+    if( regressands[i] == "Age" )
+      {
+      modelFormula <- formula( paste( regressands[i], " ~ BrainVolume + Sex + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      } else {
+      modelFormula <- formula( paste( regressands[i], " ~ Age + Age^2 + Sex + Age * Sex + BrainVolume + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      }
+    print( modelFormula )
+    cat( "\n" )
+
+    for( k in seq.int( length( hemispheres ) ) )
+      {
+      modelData <- mtlData[, grep( paste0( hemispheres[k], "." ), colnames( mtlData ) )]
+      colnames( modelData ) <- gsub( paste0( hemispheres[k], "." ), "", colnames( modelData ) )
+
+      modelData$BrainVolume = ( idpData$ants_brain_t1$Data$Volume + ukbAll$f.25010.2.0 + idpData$freesurfer_aseg$Data$f.26514 ) / 3
+      modelData$Sex = ukbAll$f.22001.0.0
+      modelData$Site = as.factor(ukbAll$f.54.2.0)
+      modelData$Age = ukbAll$f.21003.2.0
+      modelData$FluidIntelligenceScore <- ukbAll$f.20191.0.0
+      modelData$NeuroticismScore <- ukbAll$f.20127.0.0
+      modelData$NumericMemory <- ukbAll$f.20240.0.0
+
+      if( hemispheres[k] == 'left' )
+        {
+        mtlRegionalLeftLm[[j]] <- lm( modelFormula, modelData )
+        } else if( hemispheres[k] == 'right' ) {
+        mtlRegionalRightLm[[j]] <- lm( modelFormula, modelData )
+        } else {
+        mtlRegionalBothLm[[j]] <- lm( modelFormula, modelData )
+        }
+      }
+    if( j == length( modelRegions ) )
+      {
+      stargazer::stargazer( mtlRegionalRightLm[[j]], mtlRegionalLeftLm[[j]], mtlRegionalBothLm[[j]],
+          type = "latex", header = FALSE, font.size = "scriptsize",
+          column.labels = c( "right", "left", "both" ),
+          single.row = TRUE,
+          # omit.stat = c( "Observations" ),
+          model.numbers = FALSE,
+          label = paste0( 'table::', regressands[i], ".mtl.", j ),
+          title = paste0( "Model ", j, " (", regressands[i], ")" ) )
+      cat( "\n\n" )
+      }
+    }
+
+  cat( "\\clearpage\n\n" )
+
+  cat( "### AOV\n\n\n" )
+
+  cat( "\n\n" )
+
+  mtlAov <- do.call( anova, mtlRegionalRightLm )
+  print( knitr::kable( mtlAov, caption = paste0( "AOV for right MTL regions." ) ) )
+
+  mtlAov <- do.call( anova, mtlRegionalLeftLm )
+  print( knitr::kable( mtlAov, caption = paste0( "AOV for left MTL regions." ) ) )
+
+  mtlAov <- do.call( anova, mtlRegionalBothLm )
+  print( knitr::kable( mtlAov, caption = paste0( "AOV for both MTL regions." ) ) )
+  }
+```
+
+
+```{r nested_models-mtl-2, message = FALSE, results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "ants_deep_flash",
+                                       "freesurfer_aseg",
+                                       "ants_brain_t1" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+mtlData <- idpData$ants_deep_flash$Data
+mtlDataRight <- mtlData[,grep( 'right', colnames( mtlData ) )]
+mtlDataLeft <- mtlData[,grep( 'left', colnames( mtlData ) )]
+mtlDataBoth <- mtlDataLeft + mtlDataRight
+colnames( mtlDataBoth ) <- sub( 'left', 'both', colnames( mtlDataLeft ) )
+mtlData <- cbind( mtlData, mtlDataBoth )
+
+
+ukbAll <- read.csv( paste0( dataDirectory, '/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$ants_deep_flash$Data$Subject ),]
+mtlData <- mtlData[which( mtlData$Subject %in% ukbAll$Subject ),]
+idpData$ants_brain_t1$Data <- idpData$ants_brain_t1$Data[which( idpData$ants_brain_t1$Data$Subject %in% ukbAll$Subject ),]
+idpData$freesurfer_aseg$Data <- idpData$freesurfer_aseg$Data[which( idpData$freesurfer_aseg$Data$Subject %in% ukbAll$Subject ),]
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+hemispheres <- c( 'right', 'left', 'both' )
+
+modelRegions <- list()
+modelRegions[[1]] <- c( 'MTL' )
+modelRegions[[2]] <- c( 'hippocampus', 'extra.hippocampal' )
+modelRegions[[3]] <- c( 'DG_CA2_CA3_CA4', 'CA1', 'subiculum', 'aLEC', 'pMEC', 'perirhinal', 'parahippocampal' )
+
+for( i in seq.int( length( regressands ) ) )
+  {
+  cat( "## vs.", regressands[i], "\n" )
+
+  cat( "### Models\n\n" )
+
+  mtlLm <- list()
+  for( j in seq.int( length( modelRegions ) ) )
+    {
+    cat( "* Model ", j, ":\n" )
+    if( regressands[i] == "Age" )
+      {
+      modelFormula <- formula( paste( regressands[i], " ~ BrainVolume + Sex + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      } else {
+      modelFormula <- formula( paste( regressands[i], " ~ Age + Age^2 + Sex + Age * Sex + BrainVolume + Site + ", paste0( modelRegions[[j]], collapse = '+' ) ) )
+      }
+    print( modelFormula )
+    cat( "\n" )
+
+    k <- 3 # both hemispheres
+
+    modelData <- mtlData[, grep( paste0( hemispheres[k], "." ), colnames( mtlData ) )]
+    colnames( modelData ) <- gsub( paste0( hemispheres[k], "." ), "", colnames( modelData ) )
+
+    modelData$BrainVolume = ( idpData$ants_brain_t1$Data$Volume + ukbAll$f.25010.2.0 + idpData$freesurfer_aseg$Data$f.26514 ) / 3
+    modelData$Sex = ukbAll$f.22001.0.0
+    modelData$Site = as.factor(ukbAll$f.54.2.0)
+    modelData$Age = ukbAll$f.21003.2.0
+    modelData$FluidIntelligenceScore <- ukbAll$f.20191.0.0
+    modelData$NeuroticismScore <- ukbAll$f.20127.0.0
+    modelData$NumericMemory <- ukbAll$f.20240.0.0
+
+    mtlLm[[j]] <- lm( modelFormula, modelData )
+
+    vif_df <- ols_vif_tol( mtlLm[[j]] )
+    print( knitr::kable( vif_df ) )
+
+    eig_df <- ols_eigen_cindex( mtlLm[[j]] )
+    }
+
+  stargazer::stargazer( mtlLm[[1]], mtlLm[[2]], mtlLm[[3]],
+      type = "latex", header = FALSE, font.size = "scriptsize",
+      column.labels = c( "MTL", "Hipp/Extra", "All regions" ),
+      single.row = TRUE,
+      # omit.stat = c( "Observations" ),
+      model.numbers = FALSE,
+      label = paste0( 'table::', regressands[i], ".mtl.", j ) )
+  cat( "\n\n" )
+
+  cat( "### AOV\n\n\n" )
+
+  cat( "\n\n" )
+
+  mtlAov <- do.call( anova, mtlLm )
+  print( knitr::kable( mtlAov, caption = paste0( "AOV for both MTL regions." ) ) )
+  }
+```
+

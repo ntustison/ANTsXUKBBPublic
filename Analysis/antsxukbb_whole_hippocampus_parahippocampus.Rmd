@@ -1,0 +1,233 @@
+
+\clearpage
+
+# MTL --- hippocampal and parahippocampal volumes
+
+```{r ukbiobank-whole-hippocampus-parahippocampus, message = FALSE, results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- './Figures/'
+
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+# ptm <- proc.time()
+ukbAll <- read.csv( paste0( dataDirectory, '/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+# diff <- proc.time() - ptm
+# cat( "Loading time for UK biobank:  ", as.numeric( diff[3] ), "seconds\n" )
+
+##########################
+#
+# look at hippocampal volumes
+#
+
+idpData <- loadIdpData( whichData = c( "fsl_first",
+                                       "fsl_fast",
+                                       "freesurfer_aseg",
+                                       "freesurfer_dkt",
+                                       "freesurfer_hippocampus_amygdala",
+                                       "ants_deep_flash",
+                                       "ants_brain_t1" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+
+fsl <- data.frame( Subject = idpData$fsl_first$Data$Subject,
+                    right.hippocampus = idpData$fsl_first$Data$f.25020,
+                    left.hippocampus = idpData$fsl_first$Data$f.25019,
+                    # right.hippocampus = idpData$fsl_fast$Data$f.25887,
+                    # left.hippocampus = idpData$fsl_fast$Data$f.25886,
+                    right.parahippocampus = idpData$fsl_fast$Data$f.25849 + idpData$fsl_fast$Data$f.25851,
+                    left.parahippocampus = idpData$fsl_fast$Data$f.25848 + idpData$fsl_fast$Data$f.25850 )
+
+freesurfer <- data.frame( Subject = idpData$freesurfer_aseg$Data$Subject,
+                          # right.hippocampus = idpData$freesurfer_aseg$Data$f.26593,
+                          # left.hippocampus = idpData$freesurfer_aseg$Data$f.26562,
+                          right.hippocampus = idpData$freesurfer_hippocampus_amygdala$Data$f.26641,
+                          left.hippocampus = idpData$freesurfer_hippocampus_amygdala$Data$f.26663,
+                          right.parahippocampus = idpData$freesurfer_dkt$Data$f.27311,
+                          left.parahippocampus = idpData$freesurfer_dkt$Data$f.27218 )
+
+ants <- data.frame( Subject = idpData$ants_deep_flash$Data$Subject,
+                    right.hippocampus = idpData$ants_deep_flash$Data$right.hippocampus,
+                    left.hippocampus = idpData$ants_deep_flash$Data$left.hippocampus,
+                    right.parahippocampus = idpData$ants_deep_flash$Data$right.parahippocampal,
+                    left.parahippocampus = idpData$ants_deep_flash$Data$left.parahippocampal )
+
+ukbAll <- ukbAll[which( ukbAll$f.eid %in% fsl$Subject ),]
+
+hippocampalPipelines <- list()
+hippocampalPipelines[[1]] <- fsl
+hippocampalPipelines[[2]] <- freesurfer
+hippocampalPipelines[[3]] <- ants
+hippocampalPipelineNames <- c( "FSL", "FreeSurfer", "ANTs" )
+
+numberOfModels <- length( hippocampalPipelines )
+
+set.seed( 1234 )
+numberOfSubjects <- 1000
+randomIndices <- sample( nrow( ukbAll ), numberOfSubjects )
+
+hippoScatterDf <- data.frame( Age = rep( ukbAll$f.21003.2.0[randomIndices], numberOfModels * 2 * 2 ),
+                              Volume = c( fsl$right.hippocampus[randomIndices],
+                                          freesurfer$right.hippocampus[randomIndices],
+                                          ants$right.hippocampus[randomIndices],
+                                          fsl$left.hippocampus[randomIndices],
+                                          freesurfer$left.hippocampus[randomIndices],
+                                          ants$left.hippocampus[randomIndices],
+                                          fsl$right.parahippocampus[randomIndices],
+                                          freesurfer$right.parahippocampus[randomIndices],
+                                          ants$right.parahippocampus[randomIndices],
+                                          fsl$left.parahippocampus[randomIndices],
+                                          freesurfer$left.parahippocampus[randomIndices],
+                                          ants$left.parahippocampus[randomIndices] ),
+                              Pipeline = c( rep( "FSL", numberOfSubjects ),
+                                            rep( "FreeSurfer", numberOfSubjects ),
+                                            rep( "ANTs", numberOfSubjects ),
+                                            rep( "FSL", numberOfSubjects ),
+                                            rep( "FreeSurfer", numberOfSubjects ),
+                                            rep( "ANTs", numberOfSubjects ),
+                                            rep( "FSL", numberOfSubjects ),
+                                            rep( "FreeSurfer", numberOfSubjects ),
+                                            rep( "ANTs", numberOfSubjects ),
+                                            rep( "FSL", numberOfSubjects ),
+                                            rep( "FreeSurfer", numberOfSubjects ),
+                                            rep( "ANTs", numberOfSubjects ) ),
+                              Hemisphere = c( rep( "Right", numberOfModels * numberOfSubjects ),
+                                              rep( "Left", numberOfModels * numberOfSubjects ),
+                                              rep( "Right", numberOfModels * numberOfSubjects ),
+                                              rep( "Left", numberOfModels * numberOfSubjects ) ),
+                              Region = c( rep( "Hippocampus", 2 * numberOfModels * numberOfSubjects ),
+                                          rep( "Parahippocampus", 2 * numberOfModels * numberOfSubjects ) ) )
+
+hippoScatterDf$Pipeline <- factor( hippoScatterDf$Pipeline, levels = hippocampalPipelineNames )
+
+hippoScatter <- ggplot( data = hippoScatterDf ) +
+                geom_point( aes( x = Age, y = Volume, colour = Pipeline ), alpha = 0.1 ) +
+                facet_grid( rows = vars( Region ),
+                            cols = vars( Hemisphere ) ) +
+                theme_minimal() +
+                stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x ) +
+                # ggtitle( "Volume ~ Age", subtitle = paste0( "(n = ", numberOfSubjects, ")" ) ) +
+                ggtitle( "Volume ~ Age" ) +
+                # stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x + I( x^2 ) ) +
+                # ggtitle( paste0( "Volume ~ Age + Age^2 (n = ", numberOfSubjects, ")" ) ) +
+                labs( y = TeX( "Volume ($mm^3$)" ) ) +
+                scale_color_manual( values = c( "#C3BA45", "#519DB8", "#D92120", "#791C81" ) ) +
+                theme( legend.title = element_blank() )
+print( hippoScatter )
+ggsave( paste0( figuresDirectory, "hippo_parahippo.pdf" ), hippoScatter, width = 7, height = 4, units = "in" )
+
+
+```
+
+\clearpage
+
+```{r whole-hippocampus-models-regression, message = FALSE, results = 'asis', eval = FALSE}
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+
+for( r in seq.int( length( regressands ) ) )
+  {
+  cat( "## ", "vs. ", regressands[r], "\n\n" )
+
+  # modelFormula <- formula( "Volume ~ Age + Sex + BrainVolume + Site" )
+  # modelFormula <- formula( "Volume ~ Age + Sex + Site" )
+  # modelFormula <- formula( "Volume ~ Age + Age^2 + Sex + Age * Sex + BrainVolume + Site" )
+
+  modelFormula <- formula( paste0( regressands[r], " ~ HippVolume + Age + Age^2 + Sex + Age * Sex + BrainVolume + Site" ) )
+  # modelFormula <- formula( paste0( regressands[r], " ~ HippVolume + ParahippVolume + Age + Sex + BrainVolume + Site" ) )
+  if( regressands[r] == 'Age' )
+    {
+    modelFormula <- formula( "Age ~ HippVolume + Sex + BrainVolume + Site" )
+    }
+
+  cat( "**Formula:  **\n" )
+  print( modelFormula )
+
+  hippocampalData <- list()
+  count <- 1
+  for( i in seq.int( length( hippocampalPipelines ) ) )
+    {
+    for( h in c( 'right', 'left' ) )
+      {
+      hippocampalData[[count]] <- data.frame( Subject = ukbAll$f.eid,
+                                              Age = ukbAll$f.21003.2.0,
+                                              FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                                              NeuroticismScore = ukbAll$f.20127.0.0,
+                                              NumericMemory = ukbAll$f.20240.0.0,
+                                              Sex = ukbAll$f.22001.0.0,
+                                              BrainVolume = ( idpData$ants_brain_t1$Data$Volume +
+                                                              ukbAll$f.25010.2.0 +
+                                                              idpData$freesurfer_aseg$Data$f.26514 ) / 3,
+                                              Site = as.factor( ukbAll$f.54.2.0 ) )
+      if( h == "left" )
+        {
+        hippocampalData[[count]]$HippVolume <- hippocampalPipelines[[i]]$left.hippocampus
+        hippocampalData[[count]]$ParahippVolume <- hippocampalPipelines[[i]]$left.parahippocampus
+        } else {
+        hippocampalData[[count]]$HippVolume <- hippocampalPipelines[[i]]$right.hippocampus
+        hippocampalData[[count]]$ParahippVolume <- hippocampalPipelines[[i]]$right.parahippocampus
+        }
+      count <- count + 1
+      }
+    }
+  antsxukbbRegression( data = hippocampalData, modelFormula = modelFormula,
+    pipelineNames = c( "FSL.right", "FSL.left", "FreeSurfer.right", "FreeSurfer.left", "ANTs.right", "ANTs.left" ),
+    fontSize = "footnotesize", label = paste0( 'table::hippo_parahippo', regressands[r] ),
+    title = paste0( "Hippocampal/parahippocampal volume vs. ", regressands[r] ),
+    aicCaption = paste0( "AIC values for hippocampal/parahippocampal pipelines." ) )
+  cat( "\\clearpage\n\n" )
+  cat( "\n\n" )
+  }
+```
+
+
+```{r whole-hippocampus-models-regression-combine-hemispheres, message = FALSE, results = 'asis', eval = TRUE}
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+
+for( r in seq.int( length( regressands ) ) )
+  {
+  cat( "## ", "vs. ", regressands[r], "\n\n" )
+
+  # modelFormula <- formula( "Volume ~ Age + Sex + BrainVolume + Site" )
+  # modelFormula <- formula( "Volume ~ Age + Sex + Site" )
+  # modelFormula <- formula( "Volume ~ Age + Age^2 + Sex + Age * Sex + BrainVolume + Site" )
+
+  modelFormula <- formula( paste0( regressands[r], " ~ HippVolume + ParahippVolume + Age + Age^2 + Sex + Age * Sex + BrainVolume + Site" ) )
+  # modelFormula <- formula( paste0( regressands[r], " ~ HippVolume + ParahippVolume + Age + Sex + BrainVolume + Site" ) )
+  if( regressands[r] == 'Age' )
+    {
+    modelFormula <- formula( "Age ~ HippVolume + ParahippVolume + Sex + BrainVolume + Site" )
+    }
+
+  cat( "**Formula:  **\n" )
+  print( modelFormula )
+
+  hippocampalData <- list()
+  for( i in seq.int( length( hippocampalPipelines ) ) )
+    {
+    hippocampalData[[i]] <- data.frame( Subject = ukbAll$f.eid,
+                                        Age = ukbAll$f.21003.2.0,
+                                        FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                                        NeuroticismScore = ukbAll$f.20127.0.0,
+                                        NumericMemory = ukbAll$f.20240.0.0,
+                                        Sex = ukbAll$f.22001.0.0,
+                                        BrainVolume = ( idpData$ants_brain_t1$Data$Volume +
+                                                        ukbAll$f.25010.2.0 +
+                                                        idpData$freesurfer_aseg$Data$f.26514 ) / 3,
+                                        Site = as.factor( ukbAll$f.54.2.0 ) )
+      hippocampalData[[i]]$HippVolume <- hippocampalPipelines[[i]]$left.hippocampus + hippocampalPipelines[[i]]$right.hippocampus
+      hippocampalData[[i]]$ParahippVolume <- hippocampalPipelines[[i]]$left.parahippocampus + hippocampalPipelines[[i]]$right.parahippocampus
+      }
+  antsxukbbRegression( data = hippocampalData, modelFormula = modelFormula,
+    pipelineNames = c( "FSL", "FreeSurfer", "ANTs" ),
+    fontSize = "footnotesize", label = paste0( 'table::hippo_parahippo2', regressands[r] ),
+    title = paste0( "Hippocampal/parahippocampal volume vs. ", regressands[r] ),
+    aicCaption = paste0( "AIC values for hippocampal/parahippocampal pipelines." ) )
+  cat( "\\clearpage\n\n" )
+  cat( "\n\n" )
+  }
+```

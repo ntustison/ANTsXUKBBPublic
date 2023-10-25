@@ -1,0 +1,168 @@
+
+\clearpage
+
+# Comparison of DeepFLASH and FreeSurfer
+
+```{r ukbiobank-deep-flash, out.height="100%", message = FALSE, results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+# ptm <- proc.time()
+ukbAll <- read.csv( paste0( dataDirectory, '/UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+# diff <- proc.time() - ptm
+# cat( "Loading time for UK biobank:  ", as.numeric( diff[3] ), "seconds\n" )
+
+##########################
+#
+# look at hippocampal volumes
+#
+
+idpData <- loadIdpData( whichData = c( "freesurfer_dkt",
+                                       "freesurfer_aseg",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "ants_deep_flash",
+                                       "ants_brain_t1" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+freesurfer <- idpData$freesurfer_hippocampus_mapped2deepflash$Data
+freesurfer$left.hippocampus <- NULL
+freesurfer$right.hippocampus <- NULL
+freesurfer$left.entorhinal <- idpData$freesurfer_dkt$Data$f.27208
+freesurfer$right.entorhinal <- idpData$freesurfer_dkt$Data$f.27301
+freesurfer$left.parahippocampal <- idpData$freesurfer_dkt$Data$f.27218
+freesurfer$right.parahippocampal <- idpData$freesurfer_dkt$Data$f.27311
+
+ants <- idpData$ants_deep_flash$Data
+ants$left.MTL <- NULL
+ants$right.MTL <- NULL
+ants$left.hippocampus <- NULL
+ants$right.hippocampus <- NULL
+ants$left.extra.hippocampal <- NULL
+ants$right.extra.hippocampal <- NULL
+ants$left.perirhinal <- NULL
+ants$right.perirhinal <- NULL
+ants$left.entorhinal <- ants$left.aLEC + ants$left.pMEC
+ants$right.entorhinal <- ants$right.aLEC + ants$right.pMEC
+ants$left.aLEC <- NULL
+ants$right.aLEC <- NULL
+ants$left.pMEC <- NULL
+ants$right.pMEC <- NULL
+
+
+ukbAll <- ukbAll[which( ukbAll$f.eid %in% ants$Subject ),]
+ants <- ants[which( ants$Subject %in% ukbAll$f.eid ),]
+freesurfer <- freesurfer[which( freesurfer$Subject %in% ukbAll$f.eid ),]
+idpData$ants_brain_t1$Data <- idpData$ants_brain_t1$Data[which( idpData$ants_brain_t1$Data$Subject %in% ukbAll$f.eid ),]
+freesurfer <- freesurfer[, colnames( ants )]
+
+ants$Age <- ukbAll$f.21003.2.0
+freesurfer$Age <- ukbAll$f.21003.2.0
+
+freesurfer$Subject <- NULL
+ants$Subject <- NULL
+
+mtlPipelines <- list()
+mtlPipelines[[1]] <- freesurfer
+mtlPipelines[[2]] <- ants
+mtlPipelineNames <- c( "FreeSurfer", "ANTs" )
+
+numberOfModels <- length( mtlPipelines )
+
+set.seed( 1234 )
+numberOfSubjects <- 500
+randomIndices <- sample( nrow( ukbAll ), numberOfSubjects )
+
+freesurferMelt <- melt( freesurfer[randomIndices,], id.vars = "Age", value.name = "Volume" )
+colnames( freesurferMelt )[2] <- "Region"
+freesurferMelt$Pipeline <- "FreeSurfer"
+freesurferMelt$Hemisphere <- "Left"
+freesurferMelt$Hemisphere[grep( "right.", freesurferMelt$Region )] <- "Right"
+freesurferMelt$Region <- sub( "left.", "", freesurferMelt$Region )
+freesurferMelt$Region <- sub( "right.", "", freesurferMelt$Region )
+
+antsMelt <- melt( ants[randomIndices,], id.vars = "Age", value.name = "Volume" )
+colnames( antsMelt )[2] <- "Region"
+antsMelt$Pipeline <- "ANTs"
+antsMelt$Hemisphere <- "Left"
+antsMelt$Hemisphere[grep( "right.", antsMelt$Region )] <- "Right"
+antsMelt$Region <- sub( "left.", "", antsMelt$Region )
+antsMelt$Region <- sub( "right.", "", antsMelt$Region )
+
+mtlScatterDf <- rbind( freesurferMelt, antsMelt )
+
+mtlScatterDf$Pipeline <- factor( mtlScatterDf$Pipeline, levels = mtlPipelineNames )
+
+mtlScatter <- ggplot( data = mtlScatterDf ) +
+                geom_point( aes( x = Age, y = Volume, colour = Pipeline ), alpha = 0.1 ) +
+                facet_grid( rows = vars( Region ),
+                            cols = vars( Hemisphere ), scales = "free_y" ) +
+                stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x ) +
+                ggtitle( "Volume ~ Age", subtitle = paste0( "(n = ", numberOfSubjects, ")" ) ) +
+                # stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x + I( x^2 ) ) +
+                # ggtitle( paste0( "Volume ~ Age + Age^2 (n = ", numberOfSubjects, ")" ) ) +
+                labs( y = TeX( "Volume ($mm^3$)" ) ) +
+                scale_color_manual( values = c("#519DB8", "#D92120" ) )
+ggsave( "Figures/mtl_comparison.pdf", mtlScatter, height = 9, width = 7, units = "in" )
+
+knitr::include_graphics( "Figures/mtl_comparison.pdf" )
+```
+
+\clearpage
+
+```{r deepflash-regression, out.height="100%", message = FALSE, results = 'asis', eval = TRUE}
+
+regressands <- c( 'Age', 'FluidIntelligenceScore', 'NeuroticismScore' )
+
+for( r in seq.int( length( regressands ) ) )
+  {
+  cat( "## ", "vs. ", regressands[r], "\n\n" )
+
+  modelFormula <- formula( paste0( regressands[r], " ~ ",
+                               paste( unique( mtlScatterDf$Region ), collapse = " + " ),
+                               " + Age + Age^2 + Sex + Age * Sex + BrainVolume + Site" ) )
+  if( regressands[r] == 'Age' )
+    {
+    modelFormula <- formula( paste0( "Age ~ ", paste( unique( mtlScatterDf$Region ), collapse = " + " ),
+                               " + Sex + BrainVolume + Site" ) )
+    }
+
+  cat( "**Formula:  **\n" )
+  print( modelFormula )
+
+  mtlData <- list()
+  count <- 1
+  for( i in seq.int( length( mtlPipelines ) ) )
+    {
+    for( h in c( 'right', 'left' ) )
+      {
+      mtlData[[count]] <- data.frame( Subject = ukbAll$f.eid,
+                                      Age = ukbAll$f.21003.2.0,
+                                      FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                                      NeuroticismScore = ukbAll$f.20127.0.0,
+                                      NumericMemory = ukbAll$f.20240.0.0,
+                                      Sex = ukbAll$f.22001.0.0,
+                                      BrainVolume = ( idpData$ants_brain_t1$Data$Volume +
+                                                      ukbAll$f.25010.2.0 +
+                                                      idpData$freesurfer_aseg$Data$f.26514 ) / 3,
+                                      Site = as.factor( ukbAll$f.54.2.0 ) )
+      mtlData[[count]] <- cbind( mtlData[[count]], mtlPipelines[[i]][, grep( paste0( h, "." ), colnames( mtlPipelines[[i]] ) )] )
+      colnames( mtlData[[count]] ) <- sub( paste0( h, "." ), "", colnames( mtlData[[count]] ) )
+      count <- count + 1
+      }
+    }
+  antsxukbbRegression( data = mtlData, modelFormula = modelFormula,
+    pipelineNames = c( "FreeSurfer.right", "FreeSurfer.left", "ANTs.right", "ANTs.left" ),
+    fontSize = "footnotesize", label = paste0( 'table::mtl', regressands[r] ),
+    title = paste0( "MTL volumes vs. ", regressands[r] ),
+    aicCaption = paste0( "AIC values for MTL pipelines." ) )
+  cat( "\\clearpage\n\n" )
+  cat( "\n\n" )
+  }
+```
+

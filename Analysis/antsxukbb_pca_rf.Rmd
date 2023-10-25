@@ -1,0 +1,190 @@
+\clearpage
+
+# PCA
+
+```{r rf-pca, message = FALSE, results = 'asis', echo = FALSE, eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "fsl_fast",
+                                       "fsl_first",
+                                       "fsl_other",
+                                       "freesurfer_aseg",
+                                       "freesurfer_dkt_cortical_thickness",
+                                       "freesurfer_dkt_cortical_volumes",
+                                       "freesurfer_hippocampus",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "freesurfer_hippocampus_amygdala",
+                                       "ants_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_volumes",
+                                       "ants_dkt_region_volumes",
+                                       "ants_deep_atropos",
+                                       "ants_brain_t1",
+                                       "ants_deep_flash",
+                                       "ants_deep_flash_hippocampus",
+                                       "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+ukbAll <- read.csv( paste0( dataDirectory, 'ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$fsl_fast$Data$Subject ),]
+
+targetMeasures <- data.frame( Age = ukbAll$f.21003.2.0
+                              ,
+                              FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                              NeuroticismScore = ukbAll$f.20127.0.0
+                              ,
+                              NumericMemory = ukbAll$f.20240.0.0
+                              # ,
+                              # AlzheimersFather = ukbAll$f.20107.Alzheimers,
+                              # AlzheimersMother = ukbAll$f.20110.Alzheimers,
+                              # PairsTestRound1.CorrectMatches = ukbAll$f.20131.0.0,
+                              # PairsTestRound2.CorrectMatches = ukbAll$f.20131.0.1
+                            )
+
+# Compile models and target measures
+
+modelNames <- c( "FSL", "FreeSurfer", "ANTsX" )
+
+modelData <- list()
+modelDescriptions <- list()
+
+modelData <- list.append( modelData, merge( idpData$fsl_fast$Data,
+                                       merge( idpData$fsl_first$Data,
+                                              idpData$fsl_other$Data, by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$fsl_fast$Description, ".fast" ),
+                                                        paste0( idpData$fsl_first$Description, ".first" ),
+                                                        paste0( idpData$fsl_other$Description, ".other" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$freesurfer_dkt_cortical_thickness$Data,
+                                       merge( idpData$freesurfer_dkt_cortical_volumes$Data,
+                                         merge( idpData$freesurfer_aseg$Data,
+                                                idpData$freesurfer_hippocampus_amygdala$Data, by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$freesurfer_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$freesurfer_dkt_cortical_volumes$Description, ".dkt.volume" ),
+                                                        paste0( idpData$freesurfer_aseg$Description, ".aseg" ),
+                                                        paste0( idpData$freesurfer_hippocampus_amygdala$Description, ".hipp.amyg" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$ants_dkt_cortical_thickness$Data,
+                                       merge( idpData$ants_dkt_cortical_volumes$Data,
+                                         merge( idpData$ants_dkt_region_volumes$Data,
+                                           merge( idpData$ants_deep_flash$Data,
+                                             merge( idpData$ants_deep_atropos$Data,
+                                               merge( idpData$sysu_wmh$Data,
+                                                      idpData$ants_brain_t1$Data, by = "Subject" ),
+                                             by = "Subject" ),
+                                           by = "Subject" ),
+                                         by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                                                        paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                                                        paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                                                        paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                                                        idpData$sysu_wmh$Description,
+                                                        idpData$ants_brain_t1$Description ) )
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  modelData[[i]]$Subject <- NULL
+  modelDescriptions[[i]] <- modelDescriptions[[i]][which( ! grepl( "Subject", modelDescriptions[[i]] ) )]
+  modelDescriptions[[i]] <- paste0( modelNames[i], ".", modelDescriptions[[i]] )
+  }
+
+allModelsData <- data.frame( cbind( modelData[[1]], modelData[[2]], modelData[[3]] ) )
+allModelsDescriptions <- c( modelDescriptions[[1]], modelDescriptions[[2]], modelDescriptions[[3]] )
+
+modelData <- list.append( modelData, allModelsData )
+modelDescriptions <- list.append( modelDescriptions, allModelsDescriptions )
+modelNames <- append( modelNames, "All" )
+
+######################################################################
+#
+# PCA
+#
+
+numberOfFeatures <- 100
+
+set.seed( '1234' )
+numberOfTrainingData <- 10000
+trainingIndices <- sample.int( nrow( modelData[[1]] ), numberOfTrainingData )
+
+modelPcaData <- list()
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  cat( "Doing model", i, "\n" )
+  # s <- spca( scale( as.matrix( modelData[[i]][trainingIndices,] ) ), 50,
+  #            para = rep( 100, 50 ), sparse = "varnum", trace = TRUE )
+  s <- prcomp( as.matrix( modelData[[i]][trainingIndices,] ), retx = FALSE,
+               center = TRUE, scale. = TRUE, tol = NULL, rank. = numberOfFeatures )
+  modelPcaData[[i]] <- scale( modelData[[i]][-trainingIndices,], center = TRUE, scale = TRUE ) %*% s$rotation
+  }
+
+#####################################################################################
+#
+# RF prediction
+#
+
+numberOfPermutations <- 100
+numberOfTrainingData <- 5000
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  targetName <- colnames( targetMeasures )[i]
+  rmseFilename <- paste0( dataDirectory, "GradWarpExperiments/ukbiobank_pca_random_forest_", targetName, "_prediction.csv" )
+  modelFormula <- as.formula( paste0( targetName, " ~ . " ) )
+
+  cat( "\\clearpage\n\n\n" )
+  cat( "## ", targetName, "\n" )
+  cat( "\n\n" )
+
+  cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+  cat( "\n\n" )
+  cat( "**Number of training data:  **", numberOfTrainingData, "\n\n" )
+  cat( "\n\n" )
+
+  brainData <- list()
+  for( j in seq.int( length( modelPcaData ) ) )
+    {
+    brainData[[j]] <- cbind( targetMeasures[-trainingIndices, i], modelPcaData[[j]] )
+    colnames( brainData[[j]] )[1] <- targetName
+    }
+  for( j in seq.int( brainData ) )
+    {
+    brainData[[j]] <- data.frame( brainData[[j]][complete.cases( brainData[[j]] ),] )
+    }
+  brainDescriptions <- list()
+  for( j in seq.int( length( modelPcaData ) ) )
+    {
+    brainDescriptions[[j]] <- paste0( modelNames[j], seq.int( numberOfFeatures ) )
+    }
+
+  antsxukbbRandomForest( brainData, modelFormula, pipelineNames = modelNames,
+    filename = rmseFilename, numberOfPermutations = numberOfPermutations,
+    numberOfTrainingData = numberOfTrainingData,
+    plotTitle = targetName,
+    modelDescriptions = brainDescriptions,
+    numberOfRankedImportanceVariablesToPrint = 10,
+    plotFilename = paste0( "Figures/pca_rf_", targetName ),
+    plotWidth = 3, plotHeight = 3 )
+  knitr::include_graphics( paste0( "Figures/pca_rf_", targetName, ".pdf" ) )
+  }
+
+cat( "\n\n" )
+
+```
+\clearpage
+
+
+

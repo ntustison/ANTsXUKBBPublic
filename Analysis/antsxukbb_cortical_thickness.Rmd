@@ -1,0 +1,220 @@
+
+\clearpage
+
+# None
+
+```{r cortical-thickness, message = FALSE, results = 'asis', echo = FALSE, fig.show = "hold", fig.align = "center", out.width='49%', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- './Figures/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "freesurfer_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_thickness" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+ukbAll <- read.csv( paste0( dataDirectory, 'UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$ants_dkt_cortical_thickness$Data$Subject ),]
+
+targetMeasures <- data.frame( Age = ukbAll$f.21003.2.0,
+                              GeneticSex = ukbAll$f.22001.0.0
+                            )
+
+targetMeasuresType <- c(
+                         "regression",          # Age
+                         "binary"              # GeneticSex
+                      )
+
+# Compile models and target measures
+
+modelNames <- c( "FreeSurfer", "ANTsX" )
+
+modelData <- list()
+modelDescriptions <- list()
+
+modelData <- list.append( modelData, idpData$freesurfer_dkt_cortical_thickness$Data )
+modelDescriptions <- list.append( modelDescriptions, idpData$freesurfer_dkt_cortical_thickness$Description )
+
+modelData <- list.append( modelData, idpData$ants_dkt_cortical_thickness$Data )
+modelDescriptions <- list.append( modelDescriptions, idpData$ants_dkt_cortical_thickness$Description )
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  modelData[[i]]$Subject <- NULL
+  modelDescriptions[[i]] <- modelDescriptions[[i]][which( ! grepl( "Subject", modelDescriptions[[i]] ) )]
+  modelDescriptions[[i]] <- paste0( modelNames[i], ".", modelDescriptions[[i]] )
+  }
+
+#####################################################################################
+#
+# Remove highly correlated IDPs
+#
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  y <- findLinearCombos( modelData[[i]] )
+  if( length( y$remove ) > 0 )
+    {
+    cat( "Model ", i, ": Removing ", y$remove, "\n" )
+    modelData[[i]] <- modelData[[i]][, -y$remove]
+    modelDescriptions[[i]] <- modelDescriptions[[i]][-y$remove]
+    }
+  }
+
+#####################################################################################
+#
+# Linear model prediction
+#
+
+numberOfPermutations <- 10
+trainingDataPercentage <- 0.90
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  # cat( i, ": ", colnames( targetMeasures )[i], "\n", file = "./test.txt" )
+
+  # if( i == 11 || i == 12 || i == 13 )
+  #   {
+  #   next
+  #   }
+
+  targetName <- colnames( targetMeasures )[i]
+  measureFilename <- paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_lm_", targetName, "_prediction.csv" )
+  modelFormula <- as.formula( paste0( targetName, " ~ . " ) )
+
+  cat( "\\clearpage\n\n\n" )
+  cat( "## ", targetName, "\n" )
+  cat( "\n\n" )
+
+  cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+  cat( "\n\n" )
+
+  brainData <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    if( targetName == "Age" )
+      {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$GeneticSex, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "GeneticSex"
+      } else if( targetName == "GeneticSex" ) {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$Age, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "Age"
+      } else {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$Age, targetMeasures$GeneticSex, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "Age"
+      colnames( brainData[[j]] )[3] <- "GeneticSex"
+      }
+    colnames( brainData[[j]] )[1] <- targetName
+    }
+  for( j in seq.int( brainData ) )
+    {
+    brainData[[j]] <- data.frame( brainData[[j]][complete.cases( brainData[[j]] ),] )
+    }
+  brainDescriptions <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    if( targetName == "Age" )
+      {
+      brainDescriptions[[j]] <- c( "GeneticSex", modelDescriptions[[j]] )
+      } else if( targetName == "GeneticSex" ) {
+      brainDescriptions[[j]] <- c( "Age", modelDescriptions[[j]] )
+      } else {
+      brainDescriptions[[j]] <- c( "Age", "GeneticSex", modelDescriptions[[j]] )
+      }
+    }
+
+  numberOfTrainingData <- floor( trainingDataPercentage * nrow( brainData[[1]] ) )
+
+  # antsxukbbXgboost( brainData, response = targetName, type = targetMeasuresType[i],
+  #   pipelineNames = modelNames,
+  #   filename = measureFilename, numberOfPermutations = numberOfPermutations,
+  #   numberOfTrainingData = numberOfTrainingData,
+  #   plotTitle = targetName,
+  #   modelDescriptions = brainDescriptions,
+  #   numberOfRankedImportanceVariablesToPrint = 50,
+  #   plotColorValues = c( "#519DB8", "#D92120" ),
+  #   plotFilename = paste0( "Figures/cortical_thickness_xgb_", targetName ),
+  #   plotWidth = 3, plotHeight = 3 )
+
+  # cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "cortical_thickness_xgb_", targetName, ".pdf" ) ), ")", sep = "" )
+  # if( targetMeasuresType[i] == "regression" )
+  #   {
+  #   cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "cortical_thickness_xgb_", targetName, "RegressionRegion.pdf" ) ), ")", sep = "" )
+  #   }
+
+  antsxukbbLinearModel( brainData, response = targetName, type = targetMeasuresType[i],
+    pipelineNames = modelNames,
+    filename = measureFilename, numberOfPermutations = numberOfPermutations,
+    numberOfTrainingData = numberOfTrainingData,
+    plotTitle = targetName,
+    modelDescriptions = brainDescriptions,
+    numberOfRankedImportanceVariablesToPrint = 50,
+    plotColorValues = c( "#519DB8", "#D92120" ),
+    plotFilename = paste0( "Figures/cortical_thickness_lm_", targetName ),
+    plotWidth = 3, plotHeight = 3 )
+
+  cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "cortical_thickness_lm_", targetName, ".pdf" ) ), ")", sep = "" )
+  if( targetMeasuresType[i] == "regression" )
+    {
+    cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "cortical_thickness_lm_", targetName, "RegressionRegion.pdf" ) ), ")", sep = "" )
+    knitr::include_graphics( c( paste0( figuresDirectory, "cortical_thickness_lm_", targetName, ".pdf" ),
+                                paste0( figuresDirectory, "cortical_thickness_lm_", targetName, "RegressionRegion.pdf" ) ) )
+    }
+
+  }
+
+cat( "\n\n" )
+
+# Age
+cat( "## Age \n" )
+
+## Linear model
+cat( "### Linear model \n" )
+
+ants <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_lm_Age_prediction_ANTsX.csv" ) )
+freesurfer <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_lm_Age_prediction_FreeSurfer.csv" ) )
+
+ageLm.t.test <- t.test( ants$RMSE, freesurfer$RMSE )
+pander::pander( ageLm.t.test )
+
+## XGBoost
+cat( "### XGBoost \n" )
+
+ants <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_xgb_Age_prediction_ANTsX.csv" ) )
+freesurfer <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_xgb_Age_prediction_FreeSurfer.csv" ) )
+
+ageXgb.t.test <- t.test( ants$RMSE, freesurfer$RMSE )
+pander::pander( ageXgb.t.test )
+
+# GeneticSex
+cat( "## Genetic Sex \n" )
+
+## Linear model
+cat( "### Linear model \n" )
+
+ants <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_lm_GeneticSex_prediction_ANTsX.csv" ) )
+freesurfer <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_lm_GeneticSex_prediction_FreeSurfer.csv" ) )
+
+sexLm.t.test <- t.test( ants$AUC, freesurfer$AUC )
+pander::pander( sexLm.t.test )
+
+## XGBoost
+cat( "### XGBoost \n" )
+
+ants <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_xgb_GeneticSex_prediction_ANTsX.csv" ) )
+freesurfer <- read.csv( paste0( dataDirectory, "ExperimentalResults/CorticalThickness90PercentTrainingData/ukbiobank_cortical_thickness_xgb_GeneticSex_prediction_FreeSurfer.csv" ) )
+
+sexXgb.t.test <- t.test( ants$AUC, freesurfer$AUC )
+pander::pander( sexXgb.t.test )
+
+```
+\clearpage
+
+
+

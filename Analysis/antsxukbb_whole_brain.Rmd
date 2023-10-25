@@ -1,0 +1,132 @@
+
+# Comparison of whole brain volumes
+
+__Couple of notes__:
+
+* FSL brain volume = grey + white matter (defined by UK Biobank)
+* Atropos brain volume = cortical gray + white + deep gray + brain stem + cerebellum
+
+```{r whole-brain-eval, results = 'asis', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/GradWarp/'
+scriptsDirectory <- '../Scripts/'
+
+ukbAll <- read.csv( paste0( dataDirectory, '../ukb50844_imaging_only_Brian.csv' ) )
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+
+idpData <- loadIdpData( whichData = c( "fsl_other",
+                                       "freesurfer_aseg",
+                                       "ants_brain_t1",
+                                       "ants_brain_t1combined",
+                                       "ants_brain_t1nobrainer",
+                                       "ants_deep_atropos" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE )
+
+ants_deep_atropos <- data.frame( Subject = idpData$ants_deep_atropos$Data$Subject,
+                                 Volume =  idpData$ants_deep_atropos$Data$CorticalGrayMatter +
+                                           idpData$ants_deep_atropos$Data$WhiteMatter +
+                                           idpData$ants_deep_atropos$Data$DeepGrayMatter +
+                                           idpData$ants_deep_atropos$Data$BrainStem +
+                                           idpData$ants_deep_atropos$Data$Cerebellum )
+
+fsl_other <- data.frame( Subject = idpData$fsl_other$Data$Subject,
+                         Volume = idpData$fsl_other$Data$f.25010 )
+
+freesurfer_aseg <- data.frame( Subject = idpData$freesurfer_aseg$Data$Subject,
+                               Volume = idpData$freesurfer_aseg$Data$f.26514 )
+
+ukbAll <- ukbAll[which( ukbAll$f.eid %in% fsl_other$Subject ),]
+
+set.seed( 1234 )
+numberOfSubjects <- 3000
+randomIndices <- sample( nrow( ukbAll ), numberOfSubjects )
+
+brainScatterDf <- data.frame( Age = rep( ukbAll$f.21003.2.0[randomIndices], 6 ),
+                              Volume = c( fsl_other$Volume[randomIndices],
+                                          freesurfer_aseg$Volume[randomIndices],
+                                          idpData$ants_brain_t1$Data$Volume[randomIndices],
+                                          idpData$ants_brain_t1combined$Data$Volume[randomIndices],
+                                          idpData$ants_brain_t1nobrainer$Data$Volume[randomIndices],
+                                          ants_deep_atropos$Volume[randomIndices] ),
+                              Pipeline = c( rep( "FSL", numberOfSubjects ),
+                                            rep( "FreeSurfer", numberOfSubjects ),
+                                            rep( "T1", numberOfSubjects ),
+                                            rep( "Combined", numberOfSubjects ),
+                                            rep( "NoBrainer", numberOfSubjects ),
+                                            rep( "DeepAtropos", numberOfSubjects )
+                                          ) )
+
+brainScatter <- ggplot( data = brainScatterDf ) +
+                geom_point( aes( x = Age, y = Volume, colour = Pipeline ), alpha = 0.1 ) +
+                stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x ) +
+#                stat_smooth( aes( x = Age, y = Volume, colour = Pipeline ), method = "lm", formula = y ~ x + I( x^2 ) ) +
+                ggtitle( paste0( "Volume ~ Age (n = ", numberOfSubjects, ")" ) ) +
+                ylim( 1000000, 1900000 )
+print( brainScatter )
+
+```
+
+\clearpage
+
+## Regression
+
+```{r whole-brain-regression, results = 'asis', eval = TRUE}
+
+brainPipelineNames <- c( "FSL", "FreeSurfer", "T1", "Combined", "NoBrainer", "DeepAtropos"  )
+
+brainPipelines <- list()
+brainPipelines[[1]] <- fsl_other
+brainPipelines[[2]] <- freesurfer_aseg
+brainPipelines[[3]] <- idpData$ants_brain_t1$Data
+brainPipelines[[4]] <- idpData$ants_brain_t1combined$Data
+brainPipelines[[5]] <- idpData$ants_brain_t1nobrainer$Data
+brainPipelines[[6]] <- ants_deep_atropos
+
+modelFormula <- formula( "Volume ~ Age + Sex + Site" )
+
+cat( "**Formula:  **\n" )
+print( modelFormula )
+
+brainData <- list()
+for( i in seq.int( length( brainPipelines ) ) )
+  {
+  brainData[[i]] <- data.frame( Age = ukbAll$f.21003.2.0,
+                                Sex = ukbAll$f.22001.0.0,
+                                Site = as.factor( ukbAll$f.54.2.0 ),
+                                Volume = brainPipelines[[i]]$Volume )
+  }
+
+antsxukbbRegression( data = brainData, modelFormula = modelFormula, 
+    pipelineNames = brainPipelineNames, fontSize = "tiny", 
+    label = 'table::brainvolumes', title = "Whole brain pipelines",
+    aicCaption = "AIC values for the brain extraction pipelines." )
+
+```
+
+<!-- ## Random Forest evaluation -->
+
+\clearpage
+
+## Random forest prediction
+
+```{r rf-whole-brain , results = 'asis', eval = TRUE}
+
+numberOfPermutations <- 1000
+rmseFilename <- paste0( dataDirectory, "ukbiobank_random_forest_age_prediction_from_brain_volumes.csv" )
+
+cat( "**Formula:  **\n" )
+print( modelFormula )
+cat( "\n\n" )
+
+cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+cat( "\n\n" )
+
+rf <- antsxukbbRandomForest( brainData, modelFormula, pipelineNames = brainPipelineNames,
+  filename = rmseFilename, numberOfPermutations = numberOfPermutations,
+  numberOfTrainingData = 10000, plotTitle = "" )
+
+```
+
+\clearpage

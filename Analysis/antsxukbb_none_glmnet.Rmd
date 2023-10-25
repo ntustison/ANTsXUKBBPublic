@@ -1,0 +1,282 @@
+
+\clearpage
+
+# None
+
+```{r glmnet-none, message = FALSE, results = 'asis', echo = FALSE, fig.show = "hold", fig.align = "center", out.width='49%', eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- './Figures/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+idpData <- loadIdpData( whichData = c( "fsl_fast",
+                                       "fsl_first",
+                                       "fsl_other",
+                                       "freesurfer_aseg",
+                                       "freesurfer_dkt_cortical_thickness",
+                                       "freesurfer_dkt_cortical_volumes",
+                                       "freesurfer_hippocampus",
+                                       "freesurfer_hippocampus_mapped2deepflash",
+                                       "freesurfer_hippocampus_amygdala",
+                                       "ants_dkt_cortical_thickness",
+                                       "ants_dkt_cortical_volumes",
+                                       "ants_dkt_region_volumes",
+                                       "ants_deep_atropos",
+                                       "ants_brain_t1",
+                                       "ants_deep_flash",
+                                       "ants_deep_flash_hippocampus",
+                                       "sysu_wmh" ),
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+ukbAll <- read.csv( paste0( dataDirectory, 'UKBBIDPsAndDemographics/ukb50844_imaging_only_Brian.csv' ) )
+colnames( ukbAll )[1] = "Subject"
+ukbAll <- ukbAll[which( ukbAll$Subject %in% idpData$fsl_fast$Data$Subject ),]
+
+# Age
+# GeneticSex
+# BMI
+# Hearing
+ukbAll$f.2247.2.0[which( ukbAll$f.2247.2.0 < 0 | ukbAll$f.2247.2.0 > 1)] <- NA
+# Smoking
+ukbAll$f.1249.2.0[which( ukbAll$f.1249.2.0 < 0 | ukbAll$f.1249.2.0 > 4)] <- NA
+ukbAll$f.1249.2.0[which( ukbAll$f.1249.2.0 == 1 )] <- 0  # "Smoked on most or all days"
+ukbAll$f.1249.2.0[which( ukbAll$f.1249.2.0 == 2 )] <- 1  # "Smoked occasionally"
+ukbAll$f.1249.2.0[which( ukbAll$f.1249.2.0 == 3 )] <- 2  # "Just tried once or twice"
+ukbAll$f.1249.2.0[which( ukbAll$f.1249.2.0 == 4 )] <- 2  # "I have never smoked"  (combined with '3')
+# Alcohol
+# 1	Daily or almost daily
+# 2	Three or four times a week
+# 3	Once or twice a week
+# 4	One to three times a month
+# 5	Special occasions only
+# 6	Never
+# -3	Prefer not to answer
+ukbAll$f.1558.2.0[which( ukbAll$f.1558.2.0 < 0 )] <- NA
+ukbAll$f.1558.2.0 <- ukbAll$f.1558.2.0 - 1
+# Risk taking
+ukbAll$f.2040.2.0[which( ukbAll$f.2040.2.0 < 0)] <- NA
+# Nonviable pregnancy (and exclude xy dudes)
+ukbAll$f.2774.2.0[which( ukbAll$f.2774.2.0 < 0)] <- NA
+ukbAll$f.2774.2.0[which( ukbAll$f.22001.0.0 == 1)] <- NA
+# Pregnant (and exclude "unsure", xy dudes)
+# Unfortunately, there are no pregnant subjects.
+ukbAll$f.3140.2.0[which( ukbAll$f.3140.2.0 == 2)] <- NA
+ukbAll$f.3140.2.0[which( ukbAll$f.22001.0.0 == 1)] <- NA
+# SameSexIntercourse
+ukbAll$f.2159.2.0[which( ukbAll$f.2159.2.0 < 0)] <- NA
+
+targetMeasures <- data.frame(
+                              Age = ukbAll$f.21003.2.0,
+                              GeneticSex = ukbAll$f.22001.0.0,
+                              BMI = ukbAll$f.21001.2.0,
+                              Hearing = ukbAll$f.2247.2.0,
+                              TownsendDeprivationIndex = ukbAll$f.189.0.0,
+                              FluidIntelligenceScore = ukbAll$f.20191.0.0,
+                              NeuroticismScore = ukbAll$f.20127.0.0,
+                              NumericMemory = ukbAll$f.20240.0.0,
+                              Smoking = ukbAll$f.1249.2.0,
+                              Alcohol = ukbAll$f.1558.2.0,
+                              # Alzheimers = ukbAll$f.20107.Alzheimers + ukbAll$f.20110.Alzheimers,
+                              # Parkinsons = ukbAll$f.20107.Parkinsons + ukbAll$f.20110.Parkinsons,
+                              # PairsTest = ukbAll$f.20131.0.0 + ukbAll$f.20131.0.1,
+                              # DurationTrailMaking = ukbAll$f.20156.0.0 + ukbAll$f.20157.0.0,
+
+                              RiskTaking = ukbAll$f.2040.2.0,
+                              SameSexIntercourse = ukbAll$f.2159.2.0
+                              # ,
+                              # NonviablePregnancy = ukbAll$f.2774.2.0
+                            )
+
+targetMeasuresType <- c(
+                         "regression",          # Age
+                         "binary",              # GeneticSex
+                         "regression",          # BMI
+                         "binary",              # Hearing
+                         "regression",          # TownsendDeprivationIndex
+                         "regression",          # FluidIntelligence
+                         "regression",          # Neuroticism
+                         "regression",          # NumericMemory
+                         "multi",               # Smoking
+                         "multi",               # Alcohol
+                         # "multi",               # Alzheimers
+                        #  "multi",               # Parkinsons
+                         # "regression",          # PairsTest
+                         # "regression",           # DurationTrailMaking
+
+                         "binary",              # RiskTaking
+                         "binary",              # SameSexIntercourse
+                         "binary"               # NonviablePregnancy
+                      )
+
+# Compile models and target measures
+
+modelNames <- c( "FSL", "FreeSurfer", "ANTsX" )
+
+modelData <- list()
+modelDescriptions <- list()
+
+modelData <- list.append( modelData, merge( idpData$fsl_fast$Data,
+                                       merge( idpData$fsl_first$Data,
+                                              idpData$fsl_other$Data, by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$fsl_fast$Description, ".fast" ),
+                                                        paste0( idpData$fsl_first$Description, ".first" ),
+                                                        paste0( idpData$fsl_other$Description, ".other" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$freesurfer_dkt_cortical_thickness$Data,
+                                       merge( idpData$freesurfer_dkt_cortical_volumes$Data,
+                                         merge( idpData$freesurfer_aseg$Data,
+                                                idpData$freesurfer_hippocampus_amygdala$Data, by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$freesurfer_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$freesurfer_dkt_cortical_volumes$Description, ".dkt.volume" ),
+                                                        paste0( idpData$freesurfer_aseg$Description, ".aseg" ),
+                                                        paste0( idpData$freesurfer_hippocampus_amygdala$Description, ".hipp.amyg" ) ) )
+
+modelData <- list.append( modelData, merge( idpData$ants_dkt_cortical_thickness$Data,
+                                       merge( idpData$ants_dkt_cortical_volumes$Data,
+                                         merge( idpData$ants_dkt_region_volumes$Data,
+                                           merge( idpData$ants_deep_flash$Data,
+                                             merge( idpData$ants_deep_atropos$Data,
+                                               merge( idpData$sysu_wmh$Data,
+                                                      idpData$ants_brain_t1$Data, by = "Subject" ),
+                                             by = "Subject" ),
+                                           by = "Subject" ),
+                                         by = "Subject" ),
+                                       by = "Subject" ),
+                                     by = "Subject" ) )
+modelDescriptions <- list.append( modelDescriptions, c( paste0( idpData$ants_dkt_cortical_thickness$Description, ".dkt.thickness" ),
+                                                        paste0( idpData$ants_dkt_cortical_volumes$Description, ".dkt.cortical.volume" ),
+                                                        paste0( idpData$ants_dkt_region_volumes$Description, ".dkt.region.volume" ),
+                                                        paste0( idpData$ants_deep_flash$Description, ".deep.flash" ),
+                                                        paste0( idpData$ants_deep_atropos$Description, ".atropos" ),
+                                                        idpData$sysu_wmh$Description,
+                                                        idpData$ants_brain_t1$Description ) )
+
+for( i in seq.int( length( modelData ) ) )
+  {
+  modelData[[i]]$Subject <- NULL
+  modelDescriptions[[i]] <- modelDescriptions[[i]][which( ! grepl( "Subject", modelDescriptions[[i]] ) )]
+  modelDescriptions[[i]] <- paste0( modelNames[i], ".", modelDescriptions[[i]] )
+  }
+
+allModelsData <- data.frame( cbind( modelData[[1]], modelData[[2]], modelData[[3]] ) )
+allModelsDescriptions <- c( modelDescriptions[[1]], modelDescriptions[[2]], modelDescriptions[[3]] )
+
+modelData <- list.append( modelData, allModelsData )
+modelDescriptions <- list.append( modelDescriptions, allModelsDescriptions )
+modelNames <- append( modelNames, "All" )
+
+
+#####################################################################################
+#
+# Remove highly correlated IDPs
+#
+
+# for( i in seq.int( length( modelData ) ) )
+#   {
+#   y <- findLinearCombos( modelData[[i]] )
+#   if( length( y$remove ) > 0 )
+#     {
+#     cat( "Model ", i, ": Removing ", y$remove, "\n" )
+#     modelData[[i]] <- modelData[[i]][, -y$remove]
+#     modelDescriptions[[i]] <- modelDescriptions[[i]][-y$remove]
+#     }
+#   }
+
+#####################################################################################
+#
+# Linear model prediction
+#
+
+numberOfPermutations <- 10
+trainingDataPercentage <- 0.90
+
+for( i in seq.int( ncol( targetMeasures ) ) )
+  {
+  # if( i == 11 || i == 12 || i == 13 )
+  #   {
+  #   next
+  #   }
+
+  targetName <- colnames( targetMeasures )[i]
+  measureFilename <- paste0( dataDirectory, "ExperimentalResults/LinearModel90PercentTrainingData/ukbiobank_none_glmnet_", targetName, "_prediction.csv" )
+  modelFormula <- as.formula( paste0( targetName, " ~ . " ) )
+
+  cat( "\\clearpage\n\n\n" )
+  cat( "## ", targetName, "\n" )
+  cat( "\n\n" )
+
+  cat( "**Number of permutations per model:  **", numberOfPermutations, "\n" )
+  cat( "\n\n" )
+
+  brainData <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    if( targetName == "Age" )
+      {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$GeneticSex, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "GeneticSex"
+      } else if( targetName == "GeneticSex" ) {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$Age, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "Age"
+      } else {
+      brainData[[j]] <- cbind( targetMeasures[, i], targetMeasures$Age, targetMeasures$GeneticSex, modelData[[j]] )
+      colnames( brainData[[j]] )[2] <- "Age"
+      colnames( brainData[[j]] )[3] <- "GeneticSex"
+      }
+    colnames( brainData[[j]] )[1] <- targetName
+    }
+  for( j in seq.int( brainData ) )
+    {
+    brainData[[j]] <- data.frame( brainData[[j]][complete.cases( brainData[[j]] ),] )
+    }
+  brainDescriptions <- list()
+  for( j in seq.int( length( modelData ) ) )
+    {
+    if( targetName == "Age" )
+      {
+      brainDescriptions[[j]] <- c( "GeneticSex", modelDescriptions[[j]] )
+      } else if( targetName == "GeneticSex" ) {
+      brainDescriptions[[j]] <- c( "Age", modelDescriptions[[j]] )
+      } else {
+      brainDescriptions[[j]] <- c( "Age", "GeneticSex", modelDescriptions[[j]] )
+      }
+    }
+
+  numberOfTrainingData <- floor( trainingDataPercentage * nrow( brainData[[1]] ) )
+
+  antsxukbbLinearModel( brainData, response = targetName, type = targetMeasuresType[i],
+    pipelineNames = modelNames,
+    filename = measureFilename, numberOfPermutations = numberOfPermutations,
+    numberOfTrainingData = numberOfTrainingData,
+    plotTitle = targetName,
+    modelDescriptions = brainDescriptions,
+    numberOfRankedImportanceVariablesToPrint = 50,
+    plotFilename = paste0( "Figures/none_glmnet_", targetName ),
+    plotWidth = 3, plotHeight = 3, doPenalizedRegression = TRUE,
+    glmnetAlpha = 0 )
+
+  cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "none_glmnet_", targetName, ".pdf" ) ), ")", sep = "" )
+  if( targetMeasuresType[i] == "regression" )
+    {
+    cat( "![", targetName, "]", "(", normalizePath( paste0( figuresDirectory, "none_glmnet_", targetName, "RegressionRegion.pdf" ) ), ")", sep = "" )
+    knitr::include_graphics( c( paste0( figuresDirectory, "none_glmnet_", targetName, ".pdf" ),
+                                paste0( figuresDirectory, "none_glmnet_", targetName, "RegressionRegion.pdf" ) ) )
+    }
+
+  }
+
+cat( "\n\n" )
+
+```
+\clearpage
+
+
+
