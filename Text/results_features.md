@@ -45,7 +45,8 @@ described by Equation (\ref{eq:compare_predict}).
  \label{fig:ct_evaluation}
 \end{figure}
 
-In [@Tustison:2014ab;@Tustison:2021aa], IDPs under consideration were limited to
+In \textcolor{blue}{previous publications}
+[@Tustison:2014ab;@Tustison:2021aa], IDPs under consideration were limited to
 ANTsX-based and FreeSurfer cortical thickness measurements averaged over the 62
 regions of the DKT parcellation.  These IDP sets were specifically compared in
 terms of the predictive capability vis-à-vis _Age_ and _Genetic Sex_.  With
@@ -148,8 +149,11 @@ categories.
 
 \begin{table}
 \caption{Top 10 features for {\em Age}, {\em Fluid Intelligence Score}, and {\em Neuroticism
-         Score} target variables specified based on the specific, top-performing
-         machine learning techniques for the combined (i.e., All) IDP set.
+         Score} target variables specified based on the top-performing
+         machine learning techniques for the combined (i.e., All) IDP set \textcolor{blue}{
+         which was linear
+         regression for {\em Age} and {\em Fluid Intelligence Score} and sparse linear
+         regression for {\em Neuroticism Score}}.
          }
 \label{table:compare-predictions}
 \footnotesize
