@@ -72,24 +72,22 @@ complete, individual IDP correspondence across packages and 2) the general
 purpose of UKBB data (in contrast, for example, to the ADNI data
 [@Weiner:2012tf] set which focuses on Alzheimer's disease). Regarding IDP
 differences, even between identically defined IDPs (e.g., hippocampal volume),
-_observer bias_[^1] is a possible source of measurement variance
-[@Caliskan:2017ta].  Note that this variance is not indicative of inaccuracy,
-per se, such as with _instrumentation bias_ where sub-optimal calibration of
-software is used as a straw-man for comparative purposes [@Tustison:2013ut].
-Rather, observer bias is supplemental to conventional signal noise
-considerations as a potential source of measurement discrepancy which can
-provide insight when considered within the appropriate context.  For example,
-differing labeling protocols for specific anatomical structures, such as the
-hippocampal subfields and parahippocampal subregions, can reveal differences and
-those differences can motivate and facilitate harmonization
-[@Yushkevich:2015aa].
-
-[^1]: "Observer bias" is considered in the context of casting computational
-measurement tools as "observers" with "observer bias" due to the specific set of
-choices that results in the final numerical measurement.  These choices
-can include (but are certainly not limited to) modeling considerations,
+_observer bias_ is a possible source of measurement variance
+[@Caliskan:2017ta] where "observer bias" is considered in the context of casting
+computational measurement tools as "observers" with "observer bias" due to the
+specific set of choices that results in the final numerical measurement.  These
+choices can include (but are certainly not limited to) modeling considerations,
 preferences with respect to anatomical definitional ambiguities, and the set of
-parameters used to run the corresponding software.
+parameters used to run the corresponding software. Note that this variance is
+not indicative of inaccuracy, per se, such as with _instrumentation bias_ where
+sub-optimal calibration of software is used as a straw-man for comparative
+purposes [@Tustison:2013ut]. Rather, observer bias is supplemental to
+conventional signal noise considerations as a potential source of measurement
+discrepancy which can provide insight when considered within the appropriate
+context.  For example, differing labeling protocols for specific anatomical
+structures, such as the hippocampal subfields and parahippocampal subregions,
+can reveal differences and those differences can motivate and facilitate
+harmonization [@Yushkevich:2015aa].
 
 To this end, in addition to the core contribution of providing ANTsX-based UKBB
 IDPs, we explore the similarities and differences between the respective sets of
