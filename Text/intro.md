@@ -61,7 +61,7 @@ framework known as "DeepFLASH," a neural network for segmenting hippocampal
 subfields and extra-hippocampal regions which extends previous work
 [@Reagh:2018aa].  Newly introduced functionality also includes regional 
 cerebellum measurements based on the Schmahmann atlas [@Schmahmann:1999aa] 
-including cortical thickness (cf [@Das:2009uv]).
+including cortical thickness [@Das:2009uv].
 
 Characterizing the respective sets of FSL, FreeSurfer, and ANTsX IDPs and their
 mutual relationships can guide researchers in their usage as there are both

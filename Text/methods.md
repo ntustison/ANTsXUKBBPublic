@@ -56,7 +56,7 @@ totaling $7_{Deep Atropos} + 88_{DKT reg} + 128_{DKT DiReCT} + 20_{DeepFLASH} +
 48_{Cerebellum} + 13_{WMH} = 302$ IDPs which are illustrated in Figure
 \ref{fig:antsxidps}.  We have reported previously on the first three categories
 of ANTsX IDPs [@Tustison:2021aa] but provide a brief description below.  We also
-provide further details concerning both DeepFLASH and the ANTsXNet-ported WMH
+provide further details concerning both DeepFLASH and the cerebellum morphology
 algorithms.
 
 \begin{figure}
