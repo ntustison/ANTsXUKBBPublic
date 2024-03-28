@@ -1,0 +1,107 @@
+\clearpage
+
+```{r summary_stats, message = FALSE, results = 'asis', echo = FALSE, fig.show = "hold", fig.align = "center", eval = TRUE}
+
+dataDirectory <- '../Data/ukbiobank/ExperimentalResults/'
+scriptsDirectory <- '../Scripts/'
+figuresDirectory <- '../Text/Figures/'
+
+source( paste0( scriptsDirectory, "antsxukbb_utilities.R" ) )
+source( paste0( scriptsDirectory, "antsxukbb_loadIdpData.R" ) )
+
+whichData <- c( "fsl_fast",
+                "fsl_first",
+                "fsl_other",
+                "freesurfer_aseg",
+                "freesurfer_dkt_cortical_thickness",
+                "freesurfer_dkt_cortical_volumes",
+                "freesurfer_hippocampus_amygdala",
+                "ants_dkt_cortical_thickness",
+                "ants_dkt_cortical_volumes",
+                "ants_dkt_region_volumes",
+                "ants_deep_atropos",
+                "ants_brain_t1",
+                "ants_cerebellum",
+                "ants_deep_flash",
+                "sysu_wmh" )
+
+idpData <- loadIdpData( whichData = whichData,
+                        completeCases = TRUE,
+                        commonSubjects = TRUE,
+                        timePoint = 1 )
+
+whichMeasurement <- c()
+whichGroup <- c()
+whichPackage <- c()
+numberOfParametricOutliers <- c()
+numberOfNonparametricOutliers <- c()
+
+for( i in seq.int( length( idpData ) ) )
+  {
+  idpSingleData <- idpData[[i]]$Data 
+  idpSingleDescription <- idpData[[i]]$Description 
+
+  whichDataTokens <- strsplit( whichData[i], "_" )[[1]]
+  if( whichDataTokens[1] == "ants" )
+    {
+    package <- "ANTsX"
+    } else if( whichDataTokens[1] == "fsl" ) {
+    package <- "FSL"
+    } else {
+    package <- "FreeSurfer"
+    } 
+  for( j in seq.int( ncol( idpSingleData ) ) ) 
+    {
+    if( grepl( "Subject", idpSingleDescription[j] ) ||
+        grepl( "sysu", idpSingleDescription[j] ) ||
+        grepl( "hyperintensities", idpSingleDescription[j] ) )
+      {
+      cat( "Skipping ", idpSingleDescription[j], "\n" ) 
+      next
+      } 
+
+    measurements <- idpSingleData[,j]
+    whichMeasurement <- append( whichMeasurement, idpSingleDescription[j] )
+    whichPackage <- append( whichPackage, package )
+    whichGroup <- append( whichGroup, whichData[i] )
+
+    idpIqr <- quantile( measurements, probs = c( 0.25, 0.75 ), na.ram = TRUE )
+    iqr <- idpIqr[2] - idpIqr[1]
+    x <- length( which( measurements < ( idpIqr[1] - 1.5 * iqr ) ) ) + 
+         length( which( measurements > ( idpIqr[2] + 1.5 * iqr ) ) )
+    numberOfParametricOutliers <- append( numberOfParametricOutliers, x )
+
+    idpMean <- mean( measurements, na.rm = TRUE )
+    idpSd <- sd( measurements, na.rm = TRUE )
+    x <- length( which( measurements < idpMean - 2 * idpSd ) ) + 
+         length( which( measurements > idpMean + 2 * idpSd ) )
+    numberOfNonparametricOutliers <- append( numberOfNonparametricOutliers, x )
+    } 
+  }  
+
+outlierDataFrame <- data.frame( 
+   Measurement = whichMeasurement,
+   Group = whichGroup,
+   Package = factor( whichPackage, levels = c( "FSL", "FreeSurfer", "ANTsX" ) ),
+   NumberOfParametricOutliers = numberOfParametricOutliers,
+   NumberOfNonparametricOutliers = numberOfNonparametricOutliers )
+
+
+plotColorValues <- c( "#C3BA45", "#519DB8", "#D92120", "#791C81" )
+
+outlierPlot <- ggplot( data = outlierDataFrame, aes( x = NumberOfParametricOutliers, y = NumberOfNonparametricOutliers, colour = Package ) ) +
+               geom_point( alpha = 0.65, size = 2 ) +
+               scale_x_continuous( limits = c( 0, 4000 ) ) + 
+               scale_y_continuous( limits = c( 0, 4000 ) ) +
+               scale_colour_manual( values = plotColorValues ) +
+               theme( legend.position = c( 0.95, 0.88 ) ) + 
+               xlab( "Number of parametric outliers per measurement" ) +
+               ylab( "Number of nonparametric outliers per measurement" ) 
+margePlot <- ggMarginal( outlierPlot, groupColour = TRUE, groupFill = TRUE )               
+ggplot2::ggsave( paste0( figuresDirectory, "/outliers.pdf" ), margePlot, width = 6.5, height = 6, units = "in" )
+
+knitr::include_graphics( paste0( figuresDirectory, "/rmse_auc_all.pdf" ) )
+```
+
+
+

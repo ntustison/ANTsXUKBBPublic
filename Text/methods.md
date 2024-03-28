@@ -4,12 +4,17 @@
 ## UK Biobank data description
 
 The study was conducted under UKBB Resource Application ID 63965.  The total
-number of subjects at the time of download was 502,413 with 49,351 subjects
-having undergone the standard imaging battery.  Of these imaging subjects,
-only 40,898 complete sets of downloaded IDPs were in common between those
-provided by FSL and FreeSurfer processing streams [@Alfaro-Almagro:2018wi].
-Intersection with the final ANTs processed set resulted in a total study
-cohort size of 40,796.
+number of subjects at the time of download was 502,413 with 49,351 T1 and FLAIR
+images from the baseline assessment.  Although follow-up visits were available
+for many participants, only the T1 and FLAIR images from the baseline visit were
+used for this study.  Prior to this study, and as part of UKBB data repository,
+the FSL and FreeSurfer packages were used to generate sets of IDPs calculated
+from these baseline images which are made available as tabulated data as part of
+the resource application.  The UKBB’s strict quality control protocols
+[@Alfaro-Almagro:2018wi] and the intersection between FSL and FreeSurfer
+complete sets of IDPs resulted in a UKBB-derived cohort of 40,898 sets of
+measurements.   Intersection with the final ANTs complete processed IDP set
+resulted in a total study cohort size of 40,796.
 
 ## FSL structural phenotypes
 
@@ -76,14 +81,14 @@ algorithms.
 ### Brain tissue volumes
 
 The ANTsXNet deep learning libraries for Python and R (ANTsPyNet and ANTsRNet,
-respectively) were recently described in [@Tustison:2021aa] where they were
-evaluated in terms of multi-site cortical thickness estimation.  This extends
-previous work [@Tustison:2014ab;@Tustison:2019aa] in replacing key pipeline
-components with deep learning variants.  For example, a trained network, denoted
-_Deep Atropos_, replaced the original Atropos algorithm [@Avants:2011uf] for
-six-tissue segmentation (CSF, gray matter, white matter, deep gray matter,
-cerebellum, and brain stem) similar to functionality for whole brain deep
-learning-based brain extraction.
+respectively) were evaluated in terms of multi-site cortical thickness
+estimation [@Tustison:2021aa].  This extends previous work
+[@Tustison:2014ab;@Tustison:2019aa] in replacing key pipeline components with
+deep learning variants.  For example, a trained network, denoted _Deep Atropos_,
+replaced the original Atropos algorithm [@Avants:2011uf] for six-tissue
+segmentation (CSF, gray matter, white matter, deep gray matter, cerebellum, and
+brain stem) similar to functionality for whole brain deep learning-based brain
+extraction.
 
 <!--
 [^3]:  Note that the original diffeomorphic registration-based cortical thickness
@@ -99,7 +104,7 @@ cortical and subcortical regional labels from T1-weighted MRI
 [@Tustison:2021aa].  This facilitates regional averaging of cortical thickness
 values over that atlas parcellation as well as being the source of other
 potentially useful geometry-based IDPs.  In terms of network training and
-development, using multi-site data from [@Tustison:2014ab], two separate U-net
+development, using multi-site data[@Tustison:2014ab], two separate U-net
 [@Falk:2019aa] networks were trained for the "inner" (e.g., subcortical,
 cerebellar) labels and the "outer" cortical labels, respectively. Similar to
 Deep Atropos, preprocessing includes brain extraction and affine transformation
@@ -116,5 +121,4 @@ mentioned, is summarized in terms of IDPs by DKT regional definitions.  Given
 the diffeomorphic and thickness constraints dictated by the DiReCT algorithm, we
 generate additional DKT regional labels (cortex only) from the non-zero cortical
 thickness regions to also be used as IDPs.
-
 

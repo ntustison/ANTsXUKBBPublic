@@ -50,8 +50,8 @@ processing and analysis [@Tustison:2021aa] with developmental roots in
 high-performing medical image registration [@Avants:2011wx;@Avants:2014aa] and
 built on the Insight Toolkit (ITK) [@Yoo:2005uf]. ANTsX-based IDPs have
 demonstrated utility in several studies spanning a variety of organ systems,
-species, and imaging modalities (e.g.,
-[@Ding:2022tk;@Diamond:2022ty;@Kini:2021ul]). These IDPs include those which
+species, and imaging modalities
+[@Ding:2022tk;@Diamond:2022ty;@Kini:2021ul]. These IDPs include those which
 have been previously reported, such as global brain tissue volumes
 [@Avants:2011uf] and more localized, FreeSurfer-analogous cortical thickness
 values [@Tustison:2014ab;@Tustison:2019aa;@Tustison:2021aa] averaged over the
@@ -91,28 +91,24 @@ harmonization [@Yushkevich:2015aa].
 
 To this end, in addition to the core contribution of providing ANTsX-based UKBB
 IDPs, we explore the similarities and differences between the respective sets of
-structural IDPs and their combination.  Given the usage and availability of
-several powerful machine learning (ML) techniques, we quantify performance using
-multiple predictive approaches for tabulated IDP data including gradient boosted
-decision trees (i.e., XGBoost [@Chen:2016aa]) and tailored deep learning
-networks (specifically, TabNet [@Arik:2021aa]). Such frameworks potentially have
-the additional advantage of providing clinical interpretability of individual
-features (e.g., SHAP [@Lundberg:2017aa]).  For example, one of the most
-well-studied neuroimaging structural correlative relationships is chronological
-and so-called "brain age" and their health-dependent divergence
-[@Franke:2019aa].  Such subject-specific, single values are estimated using a
-variety of ML approaches and IDPs.  Although establishing normative values over
-the human life span has clinical utility, as pointed out in Nyberg
-[@Nyberg:2020vh], the single-valued brain age is at the extreme end of an
-"optimal balance between integration and diversification" required for
-neuroimaging studies.  A single score or index most likely does not capture the
-extent of the non-linearity and heterogeneity of age and other effects on brain
-structure [@Smith:2020vb]. In contrast, the type of feature-based investigation
-performed here reveals insight into such questions as:  "In what ways do the different
-IDP sets perform in terms of their predictive capabilities?," "How does this
-performance vary with different sociodemographic variables?," "In what ways are features
-complementary and can their combined effect improve prediction performance?," and
-"How does this performance vary with ML technique?".
+structural IDPs and their combination using linear modeling.
+Such modeling potentially has the additional advantage of providing clinical
+interpretability of individual features.  For
+example, one of the most well-studied neuroimaging structural correlative
+relationships is chronological and so-called "brain age" and their
+health-dependent divergence [@Franke:2019aa].  Such subject-specific, single
+values are estimated using a variety of machine learning approaches and IDPs.
+Although establishing normative values over the human life span has clinical
+utility, as pointed out in Nyberg [@Nyberg:2020vh], the single-valued brain age
+is at the extreme end of an "optimal balance between integration and
+diversification" required for neuroimaging studies.  A single score or index
+most likely does not capture the extent of the non-linearity and heterogeneity
+of age and other effects on brain structure [@Smith:2020vb]. In contrast, the
+type of feature-based investigation performed here reveals insight into such
+questions as:  "In what ways do the different IDP sets perform in terms of their
+predictive capabilities?," "How does this performance vary with different
+sociodemographic variables?," and "In what ways are features complementary and
+can their combined effect improve prediction performance?" 
 
 
 

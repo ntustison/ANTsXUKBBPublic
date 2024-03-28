@@ -11,9 +11,7 @@ structural IDPs generated using the ANTsX ecosystem.  These ANTsX IDPs, which
 includes DeepFLASH for hippocampal and extra-hippocampal parcellation,
 complement the existing sets of FSL and FreeSurfer IDPs.  A predictive modeling
 strategy using a variety of sociodemographic target variables was used to
-explore IDP viability, importance, and utility via the modeling capabilities of
-several machine learning techniques with linear regression demonstrating overall
-good performance.
+explore IDP viability, importance, and utility via linear modeling.
 
 
 

@@ -7,16 +7,15 @@ ANTsX) and their combination ("All") to train predictive models using the
 preselected target sociodemographic variables from Table \ref{table:targets}. We
 first revisit a previous evaluative framework of ANTsX cortical thickness values
 by comparing their ability to predict _Age_ and _Genetic Sex_ with corresponding
-FreeSurfer cortical thickness values [@Tustison:2021aa].
-
-Following this initial comparative analysis, ten-fold cross validation, using
-random training/evaluation sampling sets (90\% training/10% evaluation), per IDP
-set per target variable per machine learning technique (i.e., linear regression,
-Lasso, XGBoost, DenseNet, and TabNet) was used to train and evaluate the models
-described by Equation (\ref{eq:compare_predict}).
+FreeSurfer cortical thickness values [@Tustison:2021aa]. Following this initial
+comparative analysis, ten-fold cross validation, using random
+training/evaluation sampling sets (90\% training/10% evaluation), per IDP set
+per target variable was used to train and evaluate the models described by
+Equation (\ref{eq:compare_predict}).
 
 ### Revisiting ANTs and FreeSurfer cortical thickness comparison
 
+<!--
 \begin{figure}[!htb]
   \colorbox{lightgray}{
   \begin{minipage}[c]{0.47\linewidth}
@@ -44,14 +43,31 @@ described by Equation (\ref{eq:compare_predict}).
              quantify the predictive accuracy of {\em Age} and {\em Genetic Sex}, respectively.}
  \label{fig:ct_evaluation}
 \end{figure}
+-->
 
-In \textcolor{blue}{previous publications}
+\begin{figure}[!htb]
+  \begin{minipage}[c]{0.47\linewidth}
+    \centering
+      \includegraphics[width=0.95\textwidth]{./Figures/cortical_thickness_lm_Age.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.47\linewidth}
+    \centering
+      \includegraphics[width=0.95\textwidth]{./Figures/cortical_thickness_lm_GeneticSex.png}
+  \end{minipage}\hfill
+   \caption{Results for predicting {\em Age} (left) and
+             {\em Genetic Sex} (right) using both ANTsX and FreeSurfer cortical thickness data averaged
+             over the 62 cortical regions of the DKT parcellation.  RMSE and AUC were used to
+             quantify the predictive accuracy of {\em Age} and {\em Genetic Sex}, respectively.}
+ \label{fig:ct_evaluation}
+\end{figure}
+
+In previous publications
 [@Tustison:2014ab;@Tustison:2021aa], IDPs under consideration were limited to
 ANTsX-based and FreeSurfer cortical thickness measurements averaged over the 62
 regions of the DKT parcellation.  These IDP sets were specifically compared in
 terms of the predictive capability vis-à-vis _Age_ and _Genetic Sex_.  With
-respect to UKBB-derived cortical thickness IDPs, similar analysis using both
-linear and XGBoost models demonstrates consistency with prior results (see
+respect to UKBB-derived cortical thickness IDPs, similar analysis 
+demonstrates consistency with prior results (see
 Figure \ref{fig:ct_evaluation}).
 
 
@@ -100,28 +116,30 @@ Score_, _Numeric Memory_, _Body Mass Index_, and _Townsend Deprivation Index_
 were generated and evaluated as described previously.  Summary statistics for
 these variables are provided in Table \ref{table:target_stats}.  The resulting
 accuracies, in terms of RMSE, are provided in Figure
-\ref{fig:features_optimization_rmse}.
+\ref{fig:features_optimization_rmse}. These linear models provide
+consistently accurate results across the set of continuous target variables with
+the combined set of IDPs performing well for the majority of cases.   All
+models demonstrate significant correlations across IDP sets (cf. Figure
+\ref{fig:none_lm_regression}). 
 
-Linear and Lasso models provide the most consistently accurate results across
-the set of continuous target variables with the combined set of IDPs performing
-well for the majority of cases.   All linear models demonstrate significant
-correlations across IDP sets (cf. Figure \ref{fig:none_lm_regression}). Despite
-the large number of regressors, sparsity-based constraints did not significantly
-improve prediction performance.  The deep learning models (both DenseNet and
-TabNet) performed similarly although were only competitive for selected subsets
-(e.g., _Neuroticism Score_ and _Townsend Deprivation Index_). Although XGBoost
-performed well for the commonly studied _Age_ target variable, performance
-measures were relatively much less accurate for the remaining categories.  This
-could be the results of suboptimal hyperparameter choice with respect to these
-other categories but, as with the other techniques, this was not investigated
-further.
+<!--
+Despite the large number of regressors,
+sparsity-based constraints did not significantly improve prediction performance.
+The deep learning models (both DenseNet and TabNet) performed similarly although
+were only competitive for selected subsets (e.g., _Neuroticism Score_ and
+_Townsend Deprivation Index_). Although XGBoost performed well for the commonly
+studied _Age_ target variable, performance measures were relatively much less
+accurate for the remaining categories.  This could be the results of suboptimal
+hyperparameter choice with respect to these other categories but, as with the
+other techniques, this was not investigated further.
+-->
 
 ### Package IDP comparison via categorical target variables
 
 \begin{figure}[!htb]
   \centering
   \includegraphics[width=0.99\textwidth]{Figures/compare_predictions_auc.pdf}
-  \caption{Comparison of machine learning frameworks for training and prediction
+  \caption{Comparison of prediction accuracy
            of selected binary and multilabel categorical UKBB sociodemographic
            variables (cf. Table \ref{table:targets}) with the different IDP sets
            and their combination (FSL, FreeSurfer, ANTsX, and All).  {\em Smoking}
@@ -133,14 +151,16 @@ Predictive models for cohort categories associated with _Genetic Sex_, _Hearing
 Difficulty_, _Risk Taking_, _Same Sex Intercourse_, _Smoking Frequency_, and
 _Alcohol Frequency_ were generated and evaluated as described previously.  The
 resulting accuracies, in terms of binary or multi-class AUC, are provided in
-Figure \ref{fig:features_optimization_auc}.
+Figure \ref{fig:features_optimization_auc}. Similar to the continuous variables,
+the linear models perform well for most of the target variables.  Superior
+performance is seen for predicting _Genetic Sex_.  
 
-Similar to the continuous variables, the Linear and Lasso models perform well
-for most of the target variables.  Superior performance is seen for these models
-predicting _Genetic Sex_ along with XGBoost.  DenseNet performs similarly well
+<!--
+DenseNet performs similarly well
 as the Linear and Lasso models for _Hearing_, _Risk Taking_, _Same Sex Intercourse_,
 and _Alcohol_.  DenseNet models are also superior performers for predicting _Smoking_
 categories.
+-->
 
 ## Individual IDP comparison
 
@@ -149,11 +169,7 @@ categories.
 
 \begin{table}
 \caption{Top 10 features for {\em Age}, {\em Fluid Intelligence Score}, and {\em Neuroticism
-         Score} target variables specified based on the top-performing
-         machine learning techniques for the combined (i.e., All) IDP set \textcolor{blue}{
-         which was linear
-         regression for {\em Age} and {\em Fluid Intelligence Score} and sparse linear
-         regression for {\em Neuroticism Score}}.
+         Score} target variables specified for the combined (i.e., All) IDP set.
          }
 \label{table:compare-predictions}
 \footnotesize
@@ -213,25 +229,25 @@ ANTsX & DKT & Volume of left hippocampus \\
 \multicolumn{3}{c}{\cellcolor{gray!40}{\em Neuroticism}}\\
 \midrule
 \rowcolor{FSL!30}
-FSL & FAST & Volume of GM right amygdala\\
-\rowcolor{FreeSurfer!30}
-FreeSurfer & Thickness & Thickness of right superiotemporal\\
-\rowcolor{FreeSurfer!30}
-FreeSurfer & Thickness & Thickness of left posterior cingulate\\
+FSL & FAST & Volume of GM left amygdala\\
 \rowcolor{FSL!30}
-FSL & Other & Continuous volume of peripheral GM \\
+FSL & FAST & Volume of GM right amygdala\\
+\rowcolor{FSL!30}
+FSL & FAST & Volume of GM left superior frontal\\
 \rowcolor{ANTsX!30}
-ANTsX & Thickness & Thickness of left supramarginal\\
-\rowcolor{FreeSurfer!30}
-FreeSurfer & Thickness & Thickness of right posterior cingulate\\
-\rowcolor{FreeSurfer!30}
-FreeSurfer & Thickness & Thickness of right isthmus cingulate\\
+ANTsX & Thickness & Thickness of right pericalcarine\\
 \rowcolor{ANTsX!30}
-ANTsX & Thickness & Thickness of right posterior cingulate\\
-\rowcolor{ANTsX!30}
-ANTsX & Thickness & Thickness of left lateral orbitofrontal \\
+ANTsX & DKT & Volume of right middle temporal\\
+\rowcolor{FSL!30}
+FSL & FAST & Volume of GM cerebellum VI\\
 \rowcolor{FreeSurfer!30}
-FreeSurfer & HippAmyg & Volume of right AV \\
+FreeSurfer & ASEG & Volume of posterior corpus callosum\\
+\rowcolor{FSL!30}
+FSL & FAST & Volume of GM left frontal operculum\\
+\rowcolor{FSL!30}
+FSL & FAST & Volume of GM left temporal pole\\
+\rowcolor{ANTsX!30}
+ANTsX & Thickness & Thickness of right postcentral\\
 \bottomrule
 \end{tabular}
 \end{table}

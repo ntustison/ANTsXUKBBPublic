@@ -1,5 +1,6 @@
 ### Fused labeling for automated segmentation of the hippocampus and extra-hippocampal regions (DeepFLASH)
 
+<!--
 \begin{figure}
   \centering
     \includegraphics{Figures/deepFlashTemplate.png}
@@ -9,6 +10,7 @@
     protocols for a tailored segmentation domain.}
     \label{fig:deepFlashTemplate}
 \end{figure}
+-->
 
 A set of IDPs was generated using a deep learning-based framework for
 hippocampal and extra-hippocampal subfield parcellation which is also publicly
@@ -17,7 +19,7 @@ constitutes an extension of earlier work [@Reagh:2018aa], based on joint
 label fusion (JLF) [@Wang:2013ab], which has been used in a variety of studies
 [@Brown:2019aa;@Brown:2019vv;@Holbrook:2020aa;@McMakin:2021vl;@Nguyen:2019aa;@Sinha:2018ti].
 DeepFLASH  comprises both T1/T2 multi-modality and T1-only imaging networks for
-parcellating the following MTL regions (cf Figure \ref{fig:deepFlashTemplate}):
+parcellating the following MTL regions:
 
 * hippocampal subfields
     * Dentate gyrus/cornu ammonis 2--4 (DG/CA2/CA3/CA4)

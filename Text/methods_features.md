@@ -13,6 +13,75 @@ Additionally, using standardized features in predictive modeling, where feature
 importance is a component of the analysis, significantly facilitates the
 clinical interpretability of the modeling process.
 
+Herein, baseline models are made using standard linear regression where linear
+dependencies between covariates were resolved using ``findLinearCombos`` of the
+``caret`` R package [@Kuhn:2008aa].  Although other modeling
+approaches were explored (e.g., XGBoost [@Chen:2016aa],
+TabNet [@Arik:2021aa]), the linear models
+were the top performing models in terms of predictive accuracy so, in the
+interest of simplicity, we only discuss those here and refer the interested
+reader to the GitHub repository associated with this work for these additional
+explorations.  We selected several target variables for our comparative
+evaluation (cf. Table \ref{table:targets}) and generated models of the form:
+
+\begin{align}
+\label{eq:compare_predict}
+Target \sim Age + Genetic\,\,Sex + \sum_{i=1}^N IDP_i
+\end{align}
+
+where _i_ indexes over the set of _N_ IDPs for a particular grouping.
+In the cases where _Age_ or _Genetic Sex_ is the target variable, it is
+omitted from the right side of the modeling equation.
+
+
+<!--
+Much more generally, this is a current topic of interest for the larger machine
+learning community [@Shwartz-Ziv:2022aa;@Kadra:2021aa;@Gorishniy:2021aa].  As a
+final baseline comparison, we used a basic dense neural network (DenseNet)
+consisting of two hidden layers with 512 units in the first layer and 256 units
+in the second layer using leaky ReLU activation where the output layer employed
+linear activation for regression and sigmoid/softmax for binary/multi
+classification.
+-->
+
+\begin{table}
+  \caption{Set of UKBB sociodemographic targets for evaluation.}
+  \label{table:targets}
+  \center
+  \begin{tabular*}{0.95\textwidth}{c @{\extracolsep{\fill}} cc}
+  {\bf Target} & {\bf Data ID} & {\bf Brief Description} \\
+  \hline
+  Age & 21003-2.0 & Age (years) at imaging visit \\
+  Fluid intelligence score & 20191-0.0 & Number of correct answers (of 13) \\
+  Neuroticism score & 20127-0.0 & Summary of 12 behaviour domains \\
+  Numeric memory & 20240-0.0 & Maximum digits remembered correctly \\
+  Body mass index & 21001-2.0 & Impedance-based body composition \\
+  Townsend deprivation index & 189-0.0 & Material deprivation measure \\
+  Genetic sex & 22001-0.0 & Sex from genotyping \\
+  Hearing difficulty & 2247-2.0 & Any difficulty?  Yes/No \\
+  Risk taking & 2040-2.0 & Do you take risks?  Yes/No \\
+  Same sex intercourse & 2159-2.0 & Ever had?  Yes/No \\
+  Smoking & 1249-2.0 & Daily, occasionally, or $\leq 2$ times? \\
+  Alcohol & 1558-2.0 & Six frequency categories$^\dagger$ \\
+  \hline
+  \multicolumn{3}{l}
+  {\footnotesize
+  $\dagger$:  Daily, 3-4 times/week, 1-2 times/week, 1-3 times/month, special occasions only, and never.}
+  \end{tabular*}
+\end{table}
+
+
+Assessment of the models based on the three individual sets of IDPs and
+their combination employs standard quality measures: area under the
+curve (AUC) for classification targets and root-mean-square error (RMSE) for
+regression targets.  We also explored individual IDP importance through the use
+of model-specific parameter assessment metrics (i.e.., the absolute value of the
+t-statistic).
+
+
+
+
+<!--
 Herein, we compare predictive modeling frameworks using tabular data. Baseline
 comparisons include standard linear regression where linear dependencies between
 covariates were resolved using ``findLinearCombos`` of the ``caret`` R package
@@ -97,7 +166,7 @@ curve (AUC) for classification targets and root-mean-square error (RMSE) for
 regression targets.  We also explored individual IDP importance through the use
 of model-specific parameter assessment metrics such as the absolute value of the
 t-statistic for linear models and SHAP values [@Lundberg:2017aa] for neural networks.
-
+-->
 
 <!--
 ### Minimal redundancy maximal relevance

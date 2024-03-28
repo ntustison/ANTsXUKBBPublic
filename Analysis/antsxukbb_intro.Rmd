@@ -24,11 +24,15 @@ library( e1071 )
 library( MatchIt )
 library( olsrr )
 library( pander )
+library( stargazer )
+library( ggExtra )
 
-# install.packages( c( "ggplot2", "randomForest", "doParallel",
+# install.packages( c( "ggplot2", "ggExtra", "randomForest", "doParallel",
 #                      "foreach", "rlist", "elasticnet", "RGCCA",
 #                      "mRMRe", "latex2exp", "reshape2", "lubridate",
-#                      "xgboost", "SHAPforxgboost "))
+#                      "xgboost", "SHAPforxgboost ", "pROC", "plotROC",
+#                      "mgcv", "nnet", "shapr", "caret", "e1071", 
+#                      "MatchIt", "olsrr", "pander", "stargazer" ) )
 
 ```
 

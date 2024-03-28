@@ -1,6 +1,7 @@
 
 ### Cerebellum morphology
 
+<!-- 
 \begin{figure}
   \centering
     \includegraphics{Figures/cerebellum_morphology.png}
@@ -9,35 +10,22 @@
     cortical thickness maps.  (d) Regional labels based on the Schmahmann
     atlas.}
     \label{fig:cerebellumMorphology}
-\end{figure}
+\end{figure} 
+-->
 
 
 ANTsX cerebellum IDPs comprise both regional volumes and cortical thickness
 averages based on the Schmahmann atlas [@Schmahmann:1999aa] for cerebellar
-cortical parcellation (see Figure \ref{fig:cerebellumMorphology}).  Cortical
-regions include the following left and right hemispherical lobules:
-
-* I/II
-* III
-* IV
-* V
-* VI
-* Crus I
-* Crus II
-* VIIB
-* VIIIA
-* VIIIB
-* IX
-* X
-
-Quantifying cerebellar cortical thickness utilizes the DiReCT
-algorithm [@Das:2009uv].  Both tissue segmentation (CSF, gray matter, and
-white matter) and regional parcellation is based on a similar deep learning network
-as that described previously for DeepFLASH.  Training data [@Park:2014aa] was
+cortical parcellation.  Cortical regions include the following left and right
+hemispherical lobules: I/II, III, IV, V, VI, Crus I, Crus II, VIIB, VIIIA,
+VIIIB, IX, and X. Quantifying cerebellar cortical thickness utilizes the DiReCT
+algorithm [@Das:2009uv].  Both tissue segmentation (CSF, gray matter, and white
+matter) and regional parcellation is based on a similar deep learning network as
+that described previously for DeepFLASH.  Training data [@Park:2014aa] was
 coupled with previously described data augmentation.  In contrast to DeepFLASH
-which utilized a single network with multiple outputs, cerebellum output is deribed
-from first extracting the whole cerebellum and then using it as input to both the
-tissue segmentation network and Schmahmann regional atlas network.
+which utilized a single network with multiple outputs, cerebellum output is
+deribed from first extracting the whole cerebellum and then using it as input to
+both the tissue segmentation network and Schmahmann regional atlas network.
 
 
 <!--

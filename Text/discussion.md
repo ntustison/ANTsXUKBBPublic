@@ -16,12 +16,11 @@ for the curation, analysis, and visualization of tabulated data.
 
 In addition to the availability of these ANTsX UKBB IDPs, we explored their
 utility with respect to other package-specific groupings and their combinations.
-For exploration of these IDP group permutations, we used popular machine
-learning algorithms to predict commonly studied sociodemographic variables of
-current research interest (Table \ref{table:targets}).  In addition to research
-presentation in traditional venues, at least two of these target variables,
-specifically *Age* and *Fluid Intelligence*,  have been the focus of two recent
-competitions.
+For exploration of these IDP group permutations, we used linear modeling to
+predict commonly studied sociodemographic variables of current research interest
+(Table \ref{table:targets}).  In addition to research presentation in
+traditional venues, at least two of these target variables, specifically *Age*
+and *Fluid Intelligence*,  have been the focus of two recent competitions.
 
 Regarding the former, research concerning brain age estimation from neuroimaging
 is extensive and growing (cf. recent reviews
@@ -34,17 +33,12 @@ IDPs) derived from FreeSurfer [@Lombardi:2020vj]. The winning team
 [@Gong:2021vo], using an ensemble of CNNs and pretrained on a UKBB cohort of
 $N=14,503$ subjects, had a mean absolute error (MAE) of 2.90 years. Related
 CNN-based deep learning approaches achieved comparable performance levels and
-simultaneously outperformed more traditional machine learning approaches.  For
-example, the FreeSurfer IDP approach using a dense neural network
-[@Lombardi:2020vj] yielded an overall MAE accuracy of 4.6 years. Alternative
-strategies based on Lasso, Random Forests, and support vector regression
-techniques were attempted but did not achieve similar accuracy levels.
+simultaneously outperformed more traditional machine learning approaches.  
 
 Given that RMSE provides a general upper bound on MAE (i.e., MAE $\leq$ RMSE),
-the accuracy levels yielded by our FSL, FreeSurfer, ANTsX, and combined linear,
-lasso, and XGBoost models can be seen from Figure
-\ref{fig:features_optimization_rmse} to perform comparatively well.  The
-FreeSurfer and ANTsX linear models performed similarly with RMSE prediction
+the accuracy levels yielded by our FSL, FreeSurfer, ANTsX models can be seen
+from Figure \ref{fig:features_optimization_rmse} to perform comparatively well.
+The FreeSurfer and ANTsX linear models performed similarly with RMSE prediction
 values of approximately 4.4 years whereas FSL was a little higher at 4.96 years.
 However, combining all IDPs resulted in an average RMSE value of 3.8 years. When
 looking at the top 10 overall linear model features (Table
@@ -85,12 +79,12 @@ Although the stated, primary objective of these competitions is related to
 superior performance in terms of algorithmic prediction of quantitative
 sociodemographics, similar to the evaluation strategy used in this work, outside
 of the clinical research into brain age estimation, none of these performance
-metric reach the level of individual-level prediction.
+metrics reach the level of individual-level prediction.
 Consequently, these may be more informative as an interpretation of the systems-
 level relationship between brain structure and behavior.  An obvious secondary
 benefit is the insight gained into the quality and relevance of measurements and
 modeling techniques used.  In this way, these considerations touch on
-fundamental implications of the No Free Lunch Theorems for search and
+fundamental implications of the _No Free Lunch Theorems_ for search and
 optimization [@Wolpert:1997aa] where prior distributions (i.e., correspondence
 of measurements and clinical domain for algorithmic modeling) differentiate
 general performance.  Relatedly, although all packages are represented amongst
