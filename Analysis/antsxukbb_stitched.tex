@@ -368,8 +368,8 @@ features)}\label{package-based-ranking-top-50-features-1}}
 \caption{NeuroticismScore}
 \end{figure}
 
-\hypertarget{feature-ranking-lasso}{%
-\subsection{Feature ranking: Lasso}\label{feature-ranking-lasso}}
+\hypertarget{feature-ranking-linear-2}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-2}}
 
 \begin{table}
 
@@ -379,35 +379,35 @@ features)}\label{package-based-ranking-top-50-features-1}}
 \toprule
 Package & Pipeline & Feature\\
 \midrule
+FSL & FAST & Volume of grey matter in Amygdala (left)\\
 FSL & FAST & Volume of grey matter in Amygdala (right)\\
-FreeSurfer & Thickness & Mean thickness of superiortemporal (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of posteriorcingulate (left hemisphere)\\
-FSL & Other & Continuous    Volume of peripheral cortical grey matter\\
+FSL & FAST & Volume of grey matter in Superior Frontal Gyrus (left)\\
+ANTsX & Thickness & Right pericalcarine\\
+ANTsX & Cortical & Right middle temporal volume\\
+\addlinespace
+FSL & FAST & Volume of grey matter in VI Cerebellum (vermis)\\
+FreeSurfer & ASEG & Volume of CC-Posterior (whole brain)\\
+FSL & FAST & Volume of grey matter in Frontal Operculum Cortex (left)\\
+FSL & FAST & Volume of grey matter in Temporal Pole (left)\\
+ANTsX & Thickness & Right postcentral\\
+\addlinespace
 ANTsX & Thickness & Left supramarginal\\
+ANTsX & Cortical & Right isthmus cingulate volume\\
+FSL & FAST & Volume of grey matter in Middle Frontal Gyrus (left)\\
+ANTsX & Cereb & L\_VIIIA thickness\\
+ANTsX & Region & Right middle temporal\\
 \addlinespace
-FreeSurfer & Thickness & Mean thickness of posteriorcingulate (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of isthmuscingulate (left hemisphere)\\
-ANTsX & Thickness & Right posterior cingulate\\
-ANTsX & Thickness & Left lateral orbitofrontal\\
-FreeSurfer & HippAmyg & Volume of AV (right hemisphere)\\
-\addlinespace
-FreeSurfer & Thickness & Mean thickness of lateralorbitofrontal (left hemisphere)\\
+FreeSurfer & HippAmyg & Volume of Whole-hippocampus (right hemisphere)\\
+FreeSurfer & Volume & Volume of medialorbitofrontal (left hemisphere)\\
 FreeSurfer & Thickness & Mean thickness of superiorparietal (right hemisphere)\\
-ANTsX & Thickness & Right supramarginal\\
-FreeSurfer & Thickness & Mean thickness of superiortemporal (left hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of inferiortemporal (left hemisphere)\\
+FreeSurfer & Volume & Volume of parstriangularis (right hemisphere)\\
+FreeSurfer & Thickness & Mean thickness of parsopercularis (left hemisphere)\\
 \addlinespace
-ANTsX & Thickness & Left precentral\\
-FreeSurfer & Thickness & Mean thickness of transversetemporal (left hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of lingual (left hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of isthmuscingulate (right hemisphere)\\
-ANTsX & Thickness & Left posterior cingulate\\
-\addlinespace
-FreeSurfer & Thickness & Mean thickness of rostralanteriorcingulate (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of lateralorbitofrontal (right hemisphere)\\
-FreeSurfer & HippAmyg & Volume of AV (left hemisphere)\\
-ANTsX & Thickness & Left isthmus cingulate\\
-ANTsX & Thickness & Right precentral\\
+FSL & FAST & Volume of grey matter in Caudate (right)\\
+ANTsX & Region & Left posterior cingulate\\
+ANTsX & DeepFLASH & Left aLEC\\
+FSL & FAST & Volume of grey matter in Frontal Pole (right)\\
+FreeSurfer & Volume & Volume of fusiform (left hemisphere)\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -418,33 +418,33 @@ ANTsX & Thickness & Right precentral\\
 
   \begin{itemize}
   \item
-    range: {[} 0.000000004743372 , 0.06772924 {]}
+    range: {[} 0.1497857 , 11.49945 {]}
   \item
-    std: 0.006896142
+    std: 1.249287
   \item
-    skewness: 8.905521
+    skewness: 5.875585
   \end{itemize}
 \item
   FreeSurfer
 
   \begin{itemize}
   \item
-    range: {[} 0.000000003567677 , 0.06191656 {]}
+    range: {[} 0.1914575 , 3.135206 {]}
   \item
-    std: 0.01080398
+    std: 0.4852226
   \item
-    skewness: 2.993756
+    skewness: 1.354637
   \end{itemize}
 \item
   ANTsX
 
   \begin{itemize}
   \item
-    range: {[} 0.00000002994948 , 0.05547663 {]}
+    range: {[} 0.1026427 , 3.387002 {]}
   \item
-    std: 0.008088334
+    std: 0.5902549
   \item
-    skewness: 3.708592
+    skewness: 1.504382
   \end{itemize}
 \end{itemize}
 
@@ -454,11 +454,11 @@ features)}\label{package-based-ranking-top-10-features-2}}
 
 \begin{itemize}
 \item
-  FSL: rank = 1567 , imp = 0.1329233
+  FSL: rank = 116 , imp = 43.61838
 \item
-  FreeSurfer: rank = 97 , imp = 0.4832962
+  FreeSurfer: rank = 213 , imp = 23.50922
 \item
-  ANTsX: rank = 174 , imp = 0.3840031
+  ANTsX: rank = 143 , imp = 27.62823
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-25-features-2}{%
@@ -467,11 +467,11 @@ features)}\label{package-based-ranking-top-25-features-2}}
 
 \begin{itemize}
 \item
-  FSL: rank = 5819 , imp = 0.1333615
+  FSL: rank = 973 , imp = 69.36826
 \item
-  FreeSurfer: rank = 544 , imp = 0.8983481
+  FreeSurfer: rank = 1130 , imp = 48.81682
 \item
-  ANTsX: rank = 896 , imp = 0.6587533
+  ANTsX: rank = 842 , imp = 54.85405
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-50-features-2}{%
@@ -480,11 +480,11 @@ features)}\label{package-based-ranking-top-50-features-2}}
 
 \begin{itemize}
 \item
-  FSL: rank = 14572 , imp = 0.1336889
+  FSL: rank = 4902 , imp = 99.63279
 \item
-  FreeSurfer: rank = 2122 , imp = 1.230213
+  FreeSurfer: rank = 3959 , imp = 83.64052
 \item
-  ANTsX: rank = 3261 , imp = 0.8462698
+  ANTsX: rank = 3164 , imp = 91.80446
 \end{itemize}
 
 \clearpage
@@ -498,8 +498,8 @@ features)}\label{package-based-ranking-top-50-features-2}}
 \caption{NumericMemory}
 \end{figure}
 
-\hypertarget{feature-ranking-lasso-1}{%
-\subsection{Feature ranking: Lasso}\label{feature-ranking-lasso-1}}
+\hypertarget{feature-ranking-linear-3}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-3}}
 
 \begin{table}
 
@@ -509,35 +509,35 @@ features)}\label{package-based-ranking-top-50-features-2}}
 \toprule
 Package & Pipeline & Feature\\
 \midrule
-FreeSurfer & HippAmyg & Volume of AV (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of isthmuscingulate (left hemisphere)\\
+FSL & FAST & Volume of grey matter in Amygdala (left)\\
 FSL & Other & Continuous    Volume of peripheral cortical grey matter\\
-FreeSurfer & Thickness & Mean thickness of postcentral (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of inferiorparietal (left hemisphere)\\
-\addlinespace
-FreeSurfer & HippAmyg & Volume of AV (left hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of precuneus (left hemisphere)\\
 ANTsX & Thickness & Right lateral orbitofrontal\\
-ANTsX & Thickness & Right medial orbitofrontal\\
-FreeSurfer & Thickness & Mean thickness of lingual (left hemisphere)\\
+FSL & FAST & Volume of grey matter in Hippocampus (right)\\
+FreeSurfer & ASEG & Volume of CSF (whole brain)\\
 \addlinespace
-FreeSurfer & Thickness & Mean thickness of supramarginal (left hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of isthmuscingulate (right hemisphere)\\
-ANTsX & Thickness & Right transverse temporal\\
-FreeSurfer & Thickness & Mean thickness of insula (left hemisphere)\\
-ANTsX & Thickness & Left fusiform\\
+FSL & FAST & Volume of grey matter in Precentral Gyrus (right)\\
+FSL & FAST & Volume of grey matter in Middle Temporal Gyrus - temporooccipital part (right)\\
+ANTsX & Cortical & Right isthmus cingulate volume\\
+ANTsX & Region & Right isthmus cingulate\\
+FreeSurfer & HippAmyg & Volume of Whole-hippocampus (left hemisphere)\\
 \addlinespace
-FreeSurfer & Thickness & Mean thickness of rostralmiddlefrontal (left hemisphere)\\
+FreeSurfer & Thickness & Mean thickness of isthmuscingulate (left hemisphere)\\
+ANTsX & DeepFLASH & Left subiculum\\
+FSL & Other & Continuous    Volume of grey matter\\
+ANTsX & Cereb & L\_I\_II thickness\\
+FSL & FAST & Volume of grey matter in Crus I Cerebellum (vermis)\\
+\addlinespace
+ANTsX & Cortical & Left parahippocampal volume\\
+FSL & Other & Continuous    Volume of peripheral cortical grey matter (normalised for head size)\\
+FSL & FAST & Volume of grey matter in Intracalcarine Cortex (left)\\
+ANTsX & Thickness & Right superior parietal\\
+ANTsX & Cortical & Left caudal anterior cingulate volume\\
+\addlinespace
+ANTsX & Cortical & Right caudal anterior cingulate volume\\
+ANTsX & DeepFLASH & Right MTL\\
 ANTsX & Thickness & Right superior temporal\\
-ANTsX & Thickness & Left lateral orbitofrontal\\
-FreeSurfer & Thickness & Mean thickness of medialorbitofrontal (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of parsorbitalis (left hemisphere)\\
-\addlinespace
-ANTsX & Thickness & Left transverse temporal\\
-FreeSurfer & Thickness & Mean thickness of insula (right hemisphere)\\
-ANTsX & Cortical & Left caudal middle frontal volume\\
-FreeSurfer & Thickness & Mean thickness of lateralorbitofrontal (right hemisphere)\\
-ANTsX & Thickness & Left medial orbitofrontal\\
+FreeSurfer & Thickness & Mean thickness of rostralanteriorcingulate (left hemisphere)\\
+ANTsX & Region & Right lateral orbitofrontal\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -548,33 +548,33 @@ ANTsX & Thickness & Left medial orbitofrontal\\
 
   \begin{itemize}
   \item
-    range: {[} 0.000000002930496 , 0.007651691 {]}
+    range: {[} 0.09549313 , 4.647745 {]}
   \item
-    std: 0.0005948515
+    std: 0.7300451
   \item
-    skewness: 12.559
+    skewness: 1.850753
   \end{itemize}
 \item
   FreeSurfer
 
   \begin{itemize}
   \item
-    range: {[} 0.000000004589048 , 0.0106752 {]}
+    range: {[} 0.1542513 , 2.957326 {]}
   \item
-    std: 0.001189512
+    std: 0.5181698
   \item
-    skewness: 4.543139
+    skewness: 1.581697
   \end{itemize}
 \item
   ANTsX
 
   \begin{itemize}
   \item
-    range: {[} 0.000000006963895 , 0.004325757 {]}
+    range: {[} 0.1409571 , 3.140423 {]}
   \item
-    std: 0.0007972568
+    std: 0.5994258
   \item
-    skewness: 2.364202
+    skewness: 1.195387
   \end{itemize}
 \end{itemize}
 
@@ -584,11 +584,11 @@ features)}\label{package-based-ranking-top-10-features-3}}
 
 \begin{itemize}
 \item
-  FSL: rank = 1905 , imp = 0.008571247
+  FSL: rank = 109 , imp = 29.89693
 \item
-  FreeSurfer: rank = 72 , imp = 0.05603193
+  FreeSurfer: rank = 288 , imp = 22.55545
 \item
-  ANTsX: rank = 175 , imp = 0.03091613
+  ANTsX: rank = 144 , imp = 26.20399
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-25-features-3}{%
@@ -597,11 +597,11 @@ features)}\label{package-based-ranking-top-25-features-3}}
 
 \begin{itemize}
 \item
-  FSL: rank = 6300 , imp = 0.008641978
+  FSL: rank = 955 , imp = 57.76288
 \item
-  FreeSurfer: rank = 625 , imp = 0.08951268
+  FreeSurfer: rank = 1238 , imp = 49.30908
 \item
-  ANTsX: rank = 724 , imp = 0.06428639
+  ANTsX: rank = 755 , imp = 57.06385
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-50-features-3}{%
@@ -610,11 +610,11 @@ features)}\label{package-based-ranking-top-50-features-3}}
 
 \begin{itemize}
 \item
-  FSL: rank = 14864 , imp = 0.00870102
+  FSL: rank = 4439 , imp = 90.58995
 \item
-  FreeSurfer: rank = 2642 , imp = 0.1201725
+  FreeSurfer: rank = 4467 , imp = 83.32317
 \item
-  ANTsX: rank = 2518 , imp = 0.09986517
+  ANTsX: rank = 2904 , imp = 97.12109
 \end{itemize}
 
 \clearpage
@@ -628,8 +628,8 @@ features)}\label{package-based-ranking-top-50-features-3}}
 \caption{BMI}
 \end{figure}
 
-\hypertarget{feature-ranking-linear-2}{%
-\subsection{Feature ranking: Linear}\label{feature-ranking-linear-2}}
+\hypertarget{feature-ranking-linear-4}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-4}}
 
 \begin{table}
 
@@ -758,8 +758,8 @@ features)}\label{package-based-ranking-top-50-features-4}}
 \caption{TownsendDeprivationIndex}
 \end{figure}
 
-\hypertarget{feature-ranking-linear-3}{%
-\subsection{Feature ranking: Linear}\label{feature-ranking-linear-3}}
+\hypertarget{feature-ranking-linear-5}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-5}}
 
 \begin{table}
 
@@ -888,8 +888,8 @@ features)}\label{package-based-ranking-top-50-features-5}}
 \caption{GeneticSex}
 \end{figure}
 
-\hypertarget{feature-ranking-linear-4}{%
-\subsection{Feature ranking: Linear}\label{feature-ranking-linear-4}}
+\hypertarget{feature-ranking-linear-6}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-6}}
 
 \begin{table}
 
@@ -1018,8 +1018,8 @@ features)}\label{package-based-ranking-top-50-features-6}}
 \caption{Hearing}
 \end{figure}
 
-\hypertarget{feature-ranking-linear-5}{%
-\subsection{Feature ranking: Linear}\label{feature-ranking-linear-5}}
+\hypertarget{feature-ranking-linear-7}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-7}}
 
 \begin{table}
 
@@ -1148,8 +1148,8 @@ features)}\label{package-based-ranking-top-50-features-7}}
 \caption{RiskTaking}
 \end{figure}
 
-\hypertarget{feature-ranking-linear-6}{%
-\subsection{Feature ranking: Linear}\label{feature-ranking-linear-6}}
+\hypertarget{feature-ranking-linear-8}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-8}}
 
 \begin{table}
 
@@ -1278,8 +1278,8 @@ features)}\label{package-based-ranking-top-50-features-8}}
 \caption{SameSexIntercourse}
 \end{figure}
 
-\hypertarget{feature-ranking-densenet}{%
-\subsection{Feature ranking: DenseNet}\label{feature-ranking-densenet}}
+\hypertarget{feature-ranking-linear-9}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-9}}
 
 \begin{table}
 
@@ -1289,35 +1289,35 @@ features)}\label{package-based-ranking-top-50-features-8}}
 \toprule
 Package & Pipeline & Feature\\
 \midrule
--- & -- & GeneticSex\\
--- & -- & Age\\
-FreeSurfer & Volume & Volume of pericalcarine (left hemisphere)\\
-FreeSurfer & ASEG & Volume of 4th-Ventricle (whole brain)\\
-ANTsX & Thickness & Left transverse temporal\\
+FSL & FAST & Volume of grey matter in Amygdala (left)\\
+FreeSurfer & ASEG & Volume of CC-Mid-Anterior (whole brain)\\
+ANTsX & SYSU WMH & Left brain stem\\
+ANTsX & Region & Left lingual\\
+ANTsX & Region & Right ventral DC\\
 \addlinespace
-ANTsX & Cereb & R\_Crus\_II volume\\
-FreeSurfer & Thickness & Mean thickness of medialorbitofrontal (left hemisphere)\\
-ANTsX & SYSU WMH & Right temporal\\
-ANTsX & Cereb & CerebellarCSF volume\\
-FSL & FAST & Volume of grey matter in Lingual Gyrus (left)\\
+ANTsX & Region & CSF\\
+FreeSurfer & ASEG & Volume of Optic-Chiasm (whole brain)\\
+ANTsX & Thickness & Left rostral anterior cingulate\\
+ANTsX & Region & Cerebellar vermal lobules VI VII\\
+ANTsX & Cortical & Left lingual volume\\
 \addlinespace
+FSL & FAST & Volume of grey matter in Planum Polare (left)\\
+ANTsX & Thickness & Right lateral orbitofrontal\\
+ANTsX & Thickness & Right lateral occipital\\
 ANTsX & Region & Left pars triangularis\\
-ANTsX & Cortical & Right pars orbitalis volume\\
-FSL & FAST & Volume of grey matter in IX Cerebellum (vermis)\\
-FSL & Other & Continuous    Volumetric scaling from T1 head image to standard space\\
-ANTsX & DeepFLASH & Left perirhinal\\
+ANTsX & Cortical & Left rostral anterior cingulate volume\\
 \addlinespace
-ANTsX & Region & Right pars orbitalis\\
-ANTsX & SYSU WMH & Right brain stem\\
-FSL & FAST & Volume of grey matter in VIIb Cerebellum (left)\\
-ANTsX & Thickness & Right pericalcarine\\
-FSL & FAST & Volume of grey matter in Parahippocampal Gyrus - anterior division (left)\\
+FreeSurfer & ASEG & Volume of non-WM-hypointensities (whole brain)\\
+FSL & Other & Continuous    Volume of peripheral cortical grey matter (normalised for head size)\\
+ANTsX & Cereb & R\_IV thickness\\
+FreeSurfer & ASEG & Volume of Pallidum (left hemisphere)\\
+FreeSurfer & ASEG & Volume of Lateral-Ventricle (left hemisphere)\\
 \addlinespace
-ANTsX & Cortical & Right lateral occipital volume\\
-ANTsX & Region & Right postcentral\\
-FSL & FAST & Volume of grey matter in Crus I Cerebellum (left)\\
-ANTsX & Region & Right pericalcarine\\
-FreeSurfer & Thickness & Mean thickness of lingual (right hemisphere)\\
+FSL & FAST & Volume of grey matter in Superior Frontal Gyrus (right)\\
+FSL & FAST & Volume of grey matter in Frontal Medial Cortex (left)\\
+ANTsX & Region & Left putamen\\
+ANTsX & Thickness & Left lateral occipital\\
+ANTsX & Thickness & Right superior frontal\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1328,33 +1328,33 @@ FreeSurfer & Thickness & Mean thickness of lingual (right hemisphere)\\
 
   \begin{itemize}
   \item
-    range: {[} 0.000000000003268539 , 0.00000001664616 {]}
+    range: {[} 0.09777208 , 8.065794 {]}
   \item
-    std: 0.000000004021121
+    std: 0.7925432
   \item
-    skewness: 1.41056
+    skewness: 4.774372
   \end{itemize}
 \item
   FreeSurfer
 
   \begin{itemize}
   \item
-    range: {[} 0.000000000002240486 , 0.00000002967567 {]}
+    range: {[} 0.177841 , 3.047648 {]}
   \item
-    std: 0.000000003728902
+    std: 0.4620206
   \item
-    skewness: 2.520695
+    skewness: 1.247426
   \end{itemize}
 \item
   ANTsX
 
   \begin{itemize}
   \item
-    range: {[} 0.000000000005047014 , 0.00000001821027 {]}
+    range: {[} 0.1354761 , 2.923016 {]}
   \item
-    std: 0.000000003795055
+    std: 0.591493
   \item
-    skewness: 1.806069
+    skewness: 1.252716
   \end{itemize}
 \end{itemize}
 
@@ -1364,11 +1364,11 @@ features)}\label{package-based-ranking-top-10-features-9}}
 
 \begin{itemize}
 \item
-  FSL: rank = 214 , imp = 0.0000001407956
+  FSL: rank = 234 , imp = 27.48743
 \item
-  FreeSurfer: rank = 245 , imp = 0.0000001539418
+  FreeSurfer: rank = 329 , imp = 21.42504
 \item
-  ANTsX: rank = 118 , imp = 0.0000001631049
+  ANTsX: rank = 84 , imp = 25.76776
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-25-features-9}{%
@@ -1377,11 +1377,11 @@ features)}\label{package-based-ranking-top-25-features-9}}
 
 \begin{itemize}
 \item
-  FSL: rank = 1092 , imp = 0.0000002926681
+  FSL: rank = 1130 , imp = 53.00098
 \item
-  FreeSurfer: rank = 1110 , imp = 0.0000003048706
+  FreeSurfer: rank = 1717 , imp = 43.43501
 \item
-  ANTsX: rank = 840 , imp = 0.0000003275384
+  ANTsX: rank = 543 , imp = 56.88152
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-50-features-9}{%
@@ -1390,11 +1390,11 @@ features)}\label{package-based-ranking-top-50-features-9}}
 
 \begin{itemize}
 \item
-  FSL: rank = 4920 , imp = 0.000000438526
+  FSL: rank = 4806 , imp = 84.5719
 \item
-  FreeSurfer: rank = 3773 , imp = 0.0000004926684
+  FreeSurfer: rank = 5014 , imp = 76.10665
 \item
-  ANTsX: rank = 3373 , imp = 0.0000005208619
+  ANTsX: rank = 2298 , imp = 97.2722
 \end{itemize}
 
 \clearpage
@@ -1408,9 +1408,8 @@ features)}\label{package-based-ranking-top-50-features-9}}
 \caption{Smoking}
 \end{figure}
 
-\hypertarget{feature-ranking-densenet-1}{%
-\subsection{Feature ranking:
-DenseNet}\label{feature-ranking-densenet-1}}
+\hypertarget{feature-ranking-linear-10}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-10}}
 
 \begin{table}
 
@@ -1420,35 +1419,35 @@ DenseNet}\label{feature-ranking-densenet-1}}
 \toprule
 Package & Pipeline & Feature\\
 \midrule
-FreeSurfer & ASEG & Volume of choroid-plexus (left hemisphere)\\
--- & -- & Age\\
-ANTsX & SYSU WMH & Left parietal\\
-ANTsX & Thickness & Left pericalcarine\\
-FreeSurfer & Thickness & Mean thickness of transversetemporal (left hemisphere)\\
+FreeSurfer & ASEG & Volume of CC-Central (whole brain)\\
+FreeSurfer & ASEG & Volume of BrainSegNotVentSurf (whole brain)\\
+FreeSurfer & ASEG & Volume of VentralDC (right hemisphere)\\
+FreeSurfer & ASEG & Volume of Cortex (right hemisphere)\\
+FreeSurfer & ASEG & Volume of Cortex (left hemisphere)\\
 \addlinespace
-FSL & FAST & Volume of grey matter in Amygdala (left)\\
-FreeSurfer & Thickness & Mean thickness of fusiform (left hemisphere)\\
-ANTsX & SYSU WMH & Left occipital\\
-ANTsX & Cereb & R\_VIIIA thickness\\
-ANTsX & Cortical & Left insula volume\\
+FreeSurfer & ASEG & Volume of CC-Anterior (whole brain)\\
+FreeSurfer & ASEG & Volume of Optic-Chiasm (whole brain)\\
+FreeSurfer & ASEG & Volume of SupraTentorialNotVent (whole brain)\\
+FreeSurfer & ASEG & Volume of Thalamus-Proper (right hemisphere)\\
+FSL & Other & Continuous    Volume of brain stem + 4th ventricle\\
 \addlinespace
-FreeSurfer & HippAmyg & Volume of GC-ML-DG-body (right hemisphere)\\
-FSL & FAST & Volume of grey matter in IX Cerebellum (vermis)\\
-ANTsX & Cereb & L\_V thickness\\
-ANTsX & Thickness & Right precentral\\
-FreeSurfer & Thickness & Mean thickness of lingual (right hemisphere)\\
+FreeSurfer & ASEG & Volume of Pallidum (left hemisphere)\\
+-- & -- & NA\\
+FreeSurfer & ASEG & Volume of CerebralWhiteMatter (left hemisphere)\\
+FreeSurfer & Thickness & Mean thickness of caudalanteriorcingulate (left hemisphere)\\
+ANTsX & Cortical & Left superior frontal volume\\
 \addlinespace
-FSL & FIRST & Volume of amygdala (left)\\
-FreeSurfer & Thickness & Mean thickness of postcentral (left hemisphere)\\
-FSL & FAST & Volume of grey matter in Superior Parietal Lobule (left)\\
--- & -- & GeneticSex\\
-ANTsX & Atropos & DeepGrayMatter\\
+FSL & Other & Continuous    Volume of ventricular cerebrospinal fluid\\
+FreeSurfer & ASEG & Volume of EstimatedTotalIntraCranial (whole brain)\\
+FreeSurfer & ASEG & Volume of Thalamus-Proper (left hemisphere)\\
+ANTsX & Atropos & BrainStem\\
+FSL & Other & Continuous    Volume of brain = grey+white matter (normalised for head size)\\
 \addlinespace
-FSL & FAST & Volume of grey matter in VIIIa Cerebellum (right)\\
-FreeSurfer & Volume & Volume of precuneus (right hemisphere)\\
-ANTsX & Region & Left thalamus proper\\
-FreeSurfer & Volume & Volume of supramarginal (right hemisphere)\\
-FreeSurfer & HippAmyg & Volume of parasubiculum (left hemisphere)\\
+ANTsX & Atropos & WhiteMatter\\
+FreeSurfer & ASEG & Volume of CerebralWhiteMatter (right hemisphere)\\
+FSL & Other & Continuous    Volume of grey matter\\
+FSL & Other & Continuous    Volume of white matter\\
+FSL & Other & Continuous    Volume of grey matter (normalised for head size)\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1459,33 +1458,33 @@ FreeSurfer & HippAmyg & Volume of parasubiculum (left hemisphere)\\
 
   \begin{itemize}
   \item
-    range: {[} 0.0000000000003270309 , 0.0000000005886711 {]}
+    range: {[} 0.0000000004780733 , 0.04568151 {]}
   \item
-    std: 0.0000000001163567
+    std: 0.005543492
   \item
-    skewness: 1.513629
+    skewness: 4.73262
   \end{itemize}
 \item
   FreeSurfer
 
   \begin{itemize}
   \item
-    range: {[} 0.0000000000003655943 , 0.000000001000974 {]}
+    range: {[} 0 , 0.3827131 {]}
   \item
-    std: 0.0000000001167341
+    std: 0.03270468
   \item
-    skewness: 2.716113
+    skewness: 8.254631
   \end{itemize}
 \item
   ANTsX
 
   \begin{itemize}
   \item
-    range: {[} 0.0000000000001786802 , 0.000000000638014 {]}
+    range: {[} 0.00000000000009869648 , 0.02975863 {]}
   \item
-    std: 0.000000000120871
+    std: 0.004373508
   \item
-    skewness: 1.511429
+    skewness: 3.083098
   \end{itemize}
 \end{itemize}
 
@@ -1495,11 +1494,11 @@ features)}\label{package-based-ranking-top-10-features-10}}
 
 \begin{itemize}
 \item
-  FSL: rank = 280 , imp = 0.000000004373141
+  FSL: rank = 300 , imp = 0.2110577
 \item
-  FreeSurfer: rank = 159 , imp = 0.000000005361177
+  FreeSurfer: rank = 56 , imp = 1.461918
 \item
-  ANTsX: rank = 130 , imp = 0.000000005191133
+  ANTsX: rank = 262 , imp = 0.2076409
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-25-features-10}{%
@@ -1508,11 +1507,11 @@ features)}\label{package-based-ranking-top-25-features-10}}
 
 \begin{itemize}
 \item
-  FSL: rank = 1346 , imp = 0.000000008911815
+  FSL: rank = 1886 , imp = 0.2870485
 \item
-  FreeSurfer: rank = 1105 , imp = 0.00000001018895
+  FreeSurfer: rank = 607 , imp = 1.719945
 \item
-  ANTsX: rank = 728 , imp = 0.00000001080129
+  ANTsX: rank = 977 , imp = 0.3637066
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-50-features-10}{%
@@ -1521,11 +1520,11 @@ features)}\label{package-based-ranking-top-50-features-10}}
 
 \begin{itemize}
 \item
-  FSL: rank = 5736 , imp = 0.00000001346166
+  FSL: rank = 6707 , imp = 0.3520102
 \item
-  FreeSurfer: rank = 4092 , imp = 0.00000001577306
+  FreeSurfer: rank = 3375 , imp = 1.842075
 \item
-  ANTsX: rank = 2811 , imp = 0.00000001777281
+  ANTsX: rank = 3086 , imp = 0.5167613
 \end{itemize}
 
 \clearpage
@@ -1539,9 +1538,8 @@ features)}\label{package-based-ranking-top-50-features-10}}
 \caption{Alcohol}
 \end{figure}
 
-\hypertarget{feature-ranking-densenet-2}{%
-\subsection{Feature ranking:
-DenseNet}\label{feature-ranking-densenet-2}}
+\hypertarget{feature-ranking-linear-11}{%
+\subsection{Feature ranking: Linear}\label{feature-ranking-linear-11}}
 
 \begin{table}
 
@@ -1551,35 +1549,35 @@ DenseNet}\label{feature-ranking-densenet-2}}
 \toprule
 Package & Pipeline & Feature\\
 \midrule
-FreeSurfer & Thickness & Mean thickness of parsopercularis (left hemisphere)\\
-ANTsX & Cortical & Right entorhinal volume\\
-FreeSurfer & Thickness & Mean thickness of superiortemporal (right hemisphere)\\
-FreeSurfer & Thickness & Mean thickness of lateraloccipital (right hemisphere)\\
-FSL & FAST & Volume of grey matter in Middle Temporal Gyrus - anterior division (right)\\
+FreeSurfer & ASEG & Volume of Thalamus-Proper (right hemisphere)\\
+ANTsX & Atropos & DeepGrayMatter\\
+FreeSurfer & ASEG & Volume of Pallidum (left hemisphere)\\
+-- & -- & NA\\
+FreeSurfer & ASEG & Volume of Cortex (left hemisphere)\\
 \addlinespace
-ANTsX & Thickness & Right pericalcarine\\
-ANTsX & Cortical & Right inferior temporal volume\\
-FSL & FAST & Volume of grey matter in Subcallosal Cortex (left)\\
-FreeSurfer & Thickness & Mean thickness of lingual (right hemisphere)\\
-ANTsX & Cortical & Left posterior cingulate volume\\
+FSL & Other & Continuous    Volume of brain = grey+white matter\\
+FreeSurfer & ASEG & Volume of Hippocampus (left hemisphere)\\
+ANTsX & Cereb & CerebellarGrayMatter volume\\
+FreeSurfer & ASEG & Volume of CC-Central (whole brain)\\
+ANTsX & Region & Right cerebellum white matter\\
 \addlinespace
-ANTsX & Region & Right inferior temporal\\
-FSL & FAST & Volume of grey matter in Subcallosal Cortex (right)\\
--- & -- & Age\\
-ANTsX & Region & Left cuneus\\
-FSL & FAST & Volume of grey matter in VIIIb Cerebellum (right)\\
+FSL & Other & Continuous    Volume of ventricular cerebrospinal fluid (normalised for head size)\\
+FreeSurfer & ASEG & Volume of VentralDC (right hemisphere)\\
+FreeSurfer & ASEG & Volume of Thalamus-Proper (left hemisphere)\\
+FSL & Other & Continuous    Volume of ventricular cerebrospinal fluid\\
+ANTsX & Region & Left amygdala\\
 \addlinespace
-FreeSurfer & ASEG & Volume of Inf-Lat-Vent (right hemisphere)\\
-ANTsX & Thickness & Right rostral middle frontal\\
-ANTsX & Thickness & Left lateral occipital\\
-FreeSurfer & Volume & Volume of rostralmiddlefrontal (right hemisphere)\\
-ANTsX & Cortical & Right fusiform volume\\
+FreeSurfer & ASEG & Volume of BrainSegNotVentSurf (whole brain)\\
+ANTsX & Cortical & Left lingual volume\\
+FSL & Other & Continuous    Volume of brain = grey+white matter (normalised for head size)\\
+FSL & Other & Continuous    Volume of brain stem + 4th ventricle\\
+ANTsX & Region & Left cerebellum white matter\\
 \addlinespace
-ANTsX & Region & Left inferior temporal\\
-FSL & FAST & Volume of grey matter in Inferior Frontal Gyrus - pars triangularis (right)\\
-ANTsX & Region & Left pars opercularis\\
-ANTsX & DeepFLASH & Left extra hippocampal\\
-FreeSurfer & Volume & Volume of cuneus (left hemisphere)\\
+FSL & Other & Continuous    Volume of white matter\\
+FSL & Other & Continuous    Volume of white matter (normalised for head size)\\
+ANTsX & Cortical & Left superior temporal volume\\
+FreeSurfer & ASEG & Volume of choroid-plexus (left hemisphere)\\
+ANTsX & Region & Left transverse temporal\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1590,33 +1588,33 @@ FreeSurfer & Volume & Volume of cuneus (left hemisphere)\\
 
   \begin{itemize}
   \item
-    range: {[} 0.000000000001317874 , 0.000000001049847 {]}
+    range: {[} 0.0000000001192476 , 0.06011407 {]}
   \item
-    std: 0.000000000177729
+    std: 0.007067126
   \item
-    skewness: 1.846177
+    skewness: 5.058123
   \end{itemize}
 \item
   FreeSurfer
 
   \begin{itemize}
   \item
-    range: {[} 0.000000000005249085 , 0.000000001679132 {]}
+    range: {[} 0 , 0.1692415 {]}
   \item
-    std: 0.0000000001983307
+    std: 0.01298998
   \item
-    skewness: 3.149707
+    skewness: 8.804126
   \end{itemize}
 \item
   ANTsX
 
   \begin{itemize}
   \item
-    range: {[} 0.0000000000005087941 , 0.000000001512374 {]}
+    range: {[} 0 , 0.09457359 {]}
   \item
-    std: 0.0000000002030513
+    std: 0.007797607
   \item
-    skewness: 2.066722
+    skewness: 7.256026
   \end{itemize}
 \end{itemize}
 
@@ -1626,11 +1624,11 @@ features)}\label{package-based-ranking-top-10-features-11}}
 
 \begin{itemize}
 \item
-  FSL: rank = 308 , imp = 0.000000006732736
+  FSL: rank = 233 , imp = 0.2657077
 \item
-  FreeSurfer: rank = 166 , imp = 0.00000000911108
+  FreeSurfer: rank = 116 , imp = 0.5770373
 \item
-  ANTsX: rank = 126 , imp = 0.00000000857335
+  ANTsX: rank = 177 , imp = 0.3491997
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-25-features-11}{%
@@ -1639,11 +1637,11 @@ features)}\label{package-based-ranking-top-25-features-11}}
 
 \begin{itemize}
 \item
-  FSL: rank = 1596 , imp = 0.00000001311022
+  FSL: rank = 1447 , imp = 0.3594325
 \item
-  FreeSurfer: rank = 1020 , imp = 0.00000001669101
+  FreeSurfer: rank = 869 , imp = 0.7370469
 \item
-  ANTsX: rank = 636 , imp = 0.00000001763453
+  ANTsX: rank = 840 , imp = 0.5216603
 \end{itemize}
 
 \hypertarget{package-based-ranking-top-50-features-11}{%
@@ -1652,15 +1650,15 @@ features)}\label{package-based-ranking-top-50-features-11}}
 
 \begin{itemize}
 \item
-  FSL: rank = 6042 , imp = 0.0000000200281
+  FSL: rank = 4873 , imp = 0.4520167
 \item
-  FreeSurfer: rank = 3724 , imp = 0.00000002605897
+  FreeSurfer: rank = 4545 , imp = 0.8297048
 \item
-  ANTsX: rank = 2726 , imp = 0.00000002838635
+  ANTsX: rank = 2926 , imp = 0.675435
 \end{itemize}
 
 \clearpage
 
-\begin{center}\includegraphics{../Text/Figures/compare_predictions_all} \includegraphics{../Text/Figures/compare_predictions_rmse} \includegraphics{../Text/Figures/compare_predictions_auc} \includegraphics{../Text/Figures/compare_predictions_xcountry} \end{center}
+\begin{center}\includegraphics{../Text/Figures/compare_predictions_all} \includegraphics{../Text/Figures/compare_predictions_rmse} \includegraphics{../Text/Figures/compare_predictions_auc} \end{center}
 
 \end{document}

@@ -25,7 +25,7 @@ rmdFiles <- paste0( "antsxukbb_",
                       # "pca_xgb.Rmd",
                       # "mrmr_xgb.Rmd"
                        # "rf_prediction.Rmd",
-                       "compare_predictions.Rmd"
+                       "compare_predictions_round2.Rmd"
                       # "cortical_thickness.Rmd"
                       # "openneuro_lm.Rmd"
                        # "hippocampus_photoperiod.Rmd"
