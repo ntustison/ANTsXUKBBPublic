@@ -1,4 +1,5 @@
-# [ANTsX neuroimaging-derived structural phenotypes of UK Biobank](https://www.medrxiv.org/content/10.1101/2023.01.17.23284693v3)
+# [ANTsX neuroimaging-derived structural phenotypes of UK Biobank](
+https://www.nature.com/articles/s41598-024-59440-6)
 
 ___________________
 
